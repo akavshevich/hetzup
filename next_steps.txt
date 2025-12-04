@@ -1,0 +1,14 @@
+Combine local, running servers and images data to build a full list of servers
+Show servers as a selectable list
+
+DONE:
+Rewrite get_running_servers, move general logic to generic call_hetzner_api function
+Upon receiving response, make clear to TS what structure and props it should have
+Show active servers as a nicely formatted CLI output
+Make servers scrollable and selectable with arrows?
+Create a generic function for asking to select an option
+Function that pulls available images from Hetzner
+Function that retrieves a list of available server plans
+Pagination: merge arrays from non- "meta" object keys
+Pagination: implement recursion, include page query param
+Clean up code by moving cumbersome types from function definitions
