@@ -2,6 +2,7 @@ import readline from 'readline';
 import { error_to_string } from './utils';
 import select from '@inquirer/select';
 import input from '@inquirer/input';
+import { ServerList } from './types';
 
 export function welcome(): void
 {
@@ -39,10 +40,7 @@ export async function get_text_response(prompt: string): Promise<string>
 
 type SelectInquiryOptions = {name: string, value: string | number, description?: string}[];
 
-export async function get_select_response(
-	prompt: string, 
-	options: SelectInquiryOptions,
-	): Promise<string | number>
+export async function get_select_response(prompt: string, options: SelectInquiryOptions): Promise<string | number>
 {
 	const params = {'message': prompt, choices: options};
 	
@@ -61,7 +59,8 @@ export async function get_select_response(
 }
 
 function startup(command: string): void{
-	switch (command){
+	switch (command)
+	{
 		case "hello":
 			console.log('Hello!');
 			break;
@@ -69,4 +68,23 @@ function startup(command: string): void{
 			console.log('unknown command');
 			break;
 	}
+}
+
+export async function show_server_list(servers: ServerList)
+{
+	const server_select_list: SelectInquiryOptions = [];
+
+	servers.forEach(function(server, server_name)
+	{
+		let active_server = 'inactive';
+		if(server.type === 'server')
+		{
+			active_server = 'running';
+		}
+
+		server_select_list.push({name: server_name, value: server.id, description: active_server});
+	});
+
+	const selected_server = await get_select_response('Server list:', server_select_list);
+	console.log(selected_server);
 }

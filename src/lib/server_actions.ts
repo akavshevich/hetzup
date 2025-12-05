@@ -1,6 +1,7 @@
 import { read_server_list } from './configs';
 import { log_error, error_to_string } from "./utils";
 import { get_running_servers, get_snapshots, get_available_server_types } from './api_calls';
+import { ServerList } from './types';
 
 export async function generate_server_list()
 {
@@ -21,7 +22,7 @@ export async function generate_server_list()
 		throw error;
 	}
 
-	const servers: Map<string, {id: number, type: 'server' | 'snapshot'}> = new Map();
+	const servers: ServerList = new Map();
 
 	for(const server of running_servers)
 	{

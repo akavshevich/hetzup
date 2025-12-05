@@ -1,4 +1,4 @@
-Show servers as a selectable list
+
 Change the full server list to specify active and inactive servers, not server/snapshot type. Add all snapshot IDs to an array for each.
 Add useful info, such as server cores, ram and disk, number of snapshots. Format it with chalk
 
@@ -14,3 +14,4 @@ Pagination: merge arrays from non- "meta" object keys
 Pagination: implement recursion, include page query param
 Clean up code by moving cumbersome types from function definitions
 Combine running servers and snapshots to build a full list of servers
+Show servers as a selectable list

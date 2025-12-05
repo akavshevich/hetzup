@@ -1,0 +1,1 @@
+export type ServerList = Map<string, {id: number, type: 'server' | 'snapshot'}>;
