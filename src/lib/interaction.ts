@@ -3,6 +3,7 @@ import { error_to_string } from './utils';
 import select from '@inquirer/select';
 import input from '@inquirer/input';
 import { ServerList } from './types';
+import chalk from 'chalk';
 
 export function welcome(): void
 {
@@ -70,18 +71,31 @@ function startup(command: string): void{
 	}
 }
 
-export async function select_server(servers: ServerList)
+export async function select_server(servers: ServerList): Promise<string | number>
 {
 	const server_select_list: SelectInquiryOptions = [];
 
-	servers.forEach(function(server, server_name)
-	{
-		server_select_list.push({name: server_name, value: server_name, description: server.status});
-	});
+	servers.forEach(
+		function(server, server_name)
+		{
+			let display_server = chalk.green(server_name)+ ' Status: ' + server.status;
+
+			if(['running', 'starting', 'migrating', 'rebuilding', 'off'].includes(server.status))
+			{
+				display_server += ' | Cores: ' + server.cores + ', Disk: ' + server.disk + 'GB, Mem: ' + server.memory + ' GB'
+			}
+			else
+			{
+				display_server += ' | Required disk space: ' + Math.round(server.disk * 100) / 100 + ' GB';
+			}
+
+			server_select_list.push({name: display_server, value: server_name});
+		}
+	);
 
 	try
 	{
-		const selected_server = await get_select_response('Server list:', server_select_list);
+		const selected_server = await get_select_response('Choose server', server_select_list);
 		return selected_server;
 	}
 	catch(error)

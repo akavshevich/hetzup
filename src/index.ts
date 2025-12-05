@@ -38,8 +38,8 @@ async function main()
 		const server_list = await generate_server_list();
 		// console.log(server_list);
 
-		const selected_server = select_server(server_list);
-		console.log(selected_server);
+		const selected_server = await select_server(server_list);
+		console.log(server_list.get(selected_server));
 	}
 	catch (error)
 	{

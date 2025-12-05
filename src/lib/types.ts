@@ -1,1 +1,10 @@
-export type ServerList = Map<string, {id: number, status: 'running' | 'inactive', snapshots: {id: number}[]}>;
+export type ServerList = Map< 
+	string | number, 
+	{
+		id: number, 
+		status: 'running' | 'initializing' | 'starting' | 'stopping' | 'off' | 'deleting' | 'migrating' | 'rebuilding' | 'unknown' | 'inactive', 
+		snapshots: {id: number}[],
+		cores?: number,
+		disk: number,
+		memory?: number
+	}>;

@@ -85,18 +85,39 @@ async function call_hetzner_api(path: string, method: APIMethod, fields: APIFiel
 	}
 }
 
-export async function get_running_servers(): Promise<{id: number, name: string}[]>
+type RunningServer = {id: number, name: string, cores: number, disk: number, memory: number};
+type ServersAPIResponseStructure = 
+{
+	servers: 
+	[
+		{
+			id: number, 
+			name: string,
+			status: 'running' | 'initializing' | 'starting' | 'stopping' | 'off' | 'deleting' | 'migrating' | 'rebuilding' | 'unknown',
+			server_type:
+			{
+				cores: number,
+				disk: number,
+				memory: number
+			}
+		}
+	]
+};
+
+export async function get_running_servers(): Promise<RunningServer[]>
 {
 	const call = await call_hetzner_api('servers', 'GET');
 	
 	if(call.successful)
 	{
-		const response = call.response as {servers: [{id: number, name: string}]};
+		const response = call.response as ServersAPIResponseStructure;
 		const servers = [];
 
 		for (const server of response.servers)
 		{
-			servers.push({id: server.id, name: server.name})
+			servers.push(
+				{id: server.id, name: server.name, cores: server.server_type.cores, disk: server.server_type.disk, memory: server.server_type.memory}
+			);
 		}
 
 		return servers;
@@ -107,18 +128,18 @@ export async function get_running_servers(): Promise<{id: number, name: string}[
 	}
 }
 
-export async function get_snapshots(): Promise<{id: number, name: string}[]>
+export async function get_snapshots(): Promise<{id: number, name: string, disk: number}[]>
 {
 	const call = await call_hetzner_api('images', 'GET', {type: 'snapshot'});
 
 	if(call.successful)
 	{
-		const response = call.response as {images: {id: number, created: string, created_from: {name: string}}[]};
+		const response = call.response as {images: {id: number, created: string, created_from: {name: string}, image_size: number}[]};
 		const snapshots = [];
 
 		for (const image of response.images)
 		{
-			snapshots.push({id: image.id, name: image.created_from.name, date: image.created})
+			snapshots.push({id: image.id, name: image.created_from.name, date: image.created, disk: image.image_size})
 		}
 
 		return snapshots;
