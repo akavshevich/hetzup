@@ -1,1 +1,1 @@
-export type ServerList = Map<string, {id: number, type: 'server' | 'snapshot'}>;
+export type ServerList = Map<string, {id: number, status: 'running' | 'inactive', snapshots: {id: number}[]}>;

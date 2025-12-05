@@ -26,15 +26,28 @@ export async function generate_server_list()
 
 	for(const server of running_servers)
 	{
-		servers.set(server.name, {id: server.id, type: 'server'});
+		servers.set(server.name, {id: server.id, status: 'running', snapshots: []});
 	}
 
 	for(const snapshot of snapshots)
 	{
-		if(!servers.has(snapshot.name))
+		const existing_server = servers.get(snapshot.name);
+
+		if(!existing_server)
 		{
-			servers.set(snapshot.name, {id: snapshot.id, type: 'snapshot'});
+			servers.set(snapshot.name, {id: snapshot.id, status: 'inactive', snapshots: [{id: snapshot.id}]});
+			continue;
 		}
+
+		servers.set(
+			snapshot.name, 
+			{
+				id: existing_server.id, // Hetzner sorts the snapshots from oldest to newest, so the latest one should be used here
+				status: existing_server.status, 
+				snapshots: [...existing_server.snapshots, {id: snapshot.id}]
+			}
+		);
+		
 	}
 
 	return servers;

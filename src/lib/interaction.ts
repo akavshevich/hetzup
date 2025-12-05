@@ -70,21 +70,22 @@ function startup(command: string): void{
 	}
 }
 
-export async function show_server_list(servers: ServerList)
+export async function select_server(servers: ServerList)
 {
 	const server_select_list: SelectInquiryOptions = [];
 
 	servers.forEach(function(server, server_name)
 	{
-		let active_server = 'inactive';
-		if(server.type === 'server')
-		{
-			active_server = 'running';
-		}
-
-		server_select_list.push({name: server_name, value: server.id, description: active_server});
+		server_select_list.push({name: server_name, value: server_name, description: server.status});
 	});
 
-	const selected_server = await get_select_response('Server list:', server_select_list);
-	console.log(selected_server);
+	try
+	{
+		const selected_server = await get_select_response('Server list:', server_select_list);
+		return selected_server;
+	}
+	catch(error)
+	{
+		throw new Error(error_to_string(error));
+	}
 }
