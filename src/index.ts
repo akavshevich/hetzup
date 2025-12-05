@@ -1,17 +1,15 @@
 import { welcome, get_select_response } from './lib/interaction';
 import { read_server_list } from './lib/configs';
-import { get_running_servers, get_images, get_available_server_types } from './lib/api_calls';
+import { get_running_servers, get_snapshots, get_available_server_types } from './lib/api_calls';
 
 import select, { Separator } from '@inquirer/select';
 import chalk from 'chalk';
 import readline from 'readline';
+import { generate_server_list } from './lib/server_actions';
 
-const server_list = read_server_list();
 
-for(const server of server_list)
-{
-	console.log(server.name);
-}
+
+
 
 async function main()
 {
@@ -34,8 +32,11 @@ async function main()
 		// const images = await get_images();
 		// console.log(images);
 
-		const server_types = await get_available_server_types();
-		console.log(server_types.length);
+		// const server_types = await get_available_server_types();
+		// console.log(server_types.length);
+
+		const server_list = await generate_server_list();
+		console.log(server_list);
 	}
 	catch (error)
 	{

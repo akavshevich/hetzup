@@ -107,25 +107,25 @@ export async function get_running_servers(): Promise<{id: number, name: string}[
 	}
 }
 
-export async function get_images(): Promise<{id: number, name: string}[]>
+export async function get_snapshots(): Promise<{id: number, name: string}[]>
 {
 	const call = await call_hetzner_api('images', 'GET', {type: 'snapshot'});
 
 	if(call.successful)
 	{
 		const response = call.response as {images: {id: number, created: string, created_from: {name: string}}[]};
-		const images = [];
+		const snapshots = [];
 
 		for (const image of response.images)
 		{
-			images.push({id: image.id, name: image.created_from.name, date: image.created})
+			snapshots.push({id: image.id, name: image.created_from.name, date: image.created})
 		}
 
-		return images;
+		return snapshots;
 	}
 	else
 	{
-		throw new Error('Failed to call API to get a server list: ' + call.error);
+		throw new Error('Failed to call API to get a snapshot list: ' + call.error);
 	}
 }
 
@@ -193,6 +193,6 @@ export async function get_available_server_types(): Promise<ServerType[]>
 	}
 	else
 	{
-		throw new Error('Failed to call API to get a server list: ' + call.error);
+		throw new Error('Failed to call API to get a server type list: ' + call.error);
 	}
 }
