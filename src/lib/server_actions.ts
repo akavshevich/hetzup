@@ -1,9 +1,9 @@
 import { read_server_list } from './configs';
 import { log_error, error_to_string } from "./utils";
-import { get_running_servers, get_snapshots, get_available_server_types } from './api_calls';
-import { ServerList } from './types';
+import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot } from './api_calls';
+import { Server, ServerList } from './types';
 
-export async function generate_server_list()
+export async function generate_server_list(): Promise< ServerList >
 {
 	let running_servers;
 	let snapshots;
@@ -45,18 +45,69 @@ export async function generate_server_list()
 			continue;
 		}
 
+		const updated_server_details: Server = 
+		{
+			id: existing_server.id,
+			name: existing_server.name,
+			status: existing_server.status, 
+			snapshots: [...existing_server.snapshots, {id: snapshot.id}],
+			disk: existing_server.disk
+		};
+
+		if(existing_server.status === 'inactive')
+		{
+			updated_server_details.id = snapshot.id; // Hetzner sorts the snapshots from oldest to newest, that way the latest will be here
+			updated_server_details.disk = snapshot.disk;
+		}
+		else
+		{
+			updated_server_details.cores = existing_server.cores;
+			updated_server_details.memory = existing_server.memory;
+		}
+
 		servers.set(
 			snapshot.name, 
-			{
-				id: snapshot.id, // Hetzner sorts the snapshots from oldest to newest, so the latest one should be used here
-				name: existing_server.name,
-				status: existing_server.status, 
-				snapshots: [...existing_server.snapshots, {id: snapshot.id}],
-				disk: snapshot.disk
-			}
+			updated_server_details
 		);
 		
 	}
 
 	return servers;
+}
+
+export async function save_server_to_snapshot(server: Server): Promise< void >
+{
+	try
+	{
+		console.log('Initializing new snapshot...');
+		const new_snapshot_id = await initialize_snapshot_save(server);
+
+		console.log('Saving server to snapshot...');
+
+		return new Promise(
+			function (resolve)
+			{
+				const check_on_snapshot = setInterval(
+					async function ()
+					{
+						const snapshot_details = await get_snapshot(new_snapshot_id);
+						if(snapshot_details.status === 'creating')
+						{
+							return;
+						}
+
+						clearInterval(check_on_snapshot);
+						resolve();
+					},
+					2000
+				);
+			}
+		);
+
+	}
+	catch (error)
+	{
+		throw new Error(error_to_string(error));
+	}
+
 }

@@ -122,7 +122,12 @@ export async function show_server_actions(server: Server)
 	{
 		server_actions_list.push({name: 'Save to snapshot and stop', value: 'save_stop'});
 		server_actions_list.push({name: 'Save to snapshot without stopping', value: 'save'});
-		server_actions_list.push({name: 'Revert to previous snapshot', value: 'revert'});
+
+		if(server.snapshots.length > 0)
+		{
+			server_actions_list.push({name: 'Revert to previous snapshot', value: 'revert'});
+		}
+		
 		server_actions_list.push({name: 'Stop without saving', value: 'stop'});
 		server_actions_list.push(new Separator());
 		server_actions_list.push({name: 'Back', value: 'back'});
