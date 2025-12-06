@@ -1,4 +1,5 @@
-Upon server selection, show options based on status
+Implement saving server to snapshot
+Implement deleting server
 
 DONE:
 Rewrite get_running_servers, move general logic to generic call_hetzner_api function
@@ -15,3 +16,4 @@ Combine running servers and snapshots to build a full list of servers
 Show servers as a selectable list
 Change the full server list to specify active and inactive servers, not server/snapshot type. Add all snapshot IDs to an array for each.
 Add useful info, such as server cores, ram and disk, number of snapshots. Format it with chalk
+Upon server selection, show options based on status

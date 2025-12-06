@@ -1,4 +1,4 @@
-import { welcome, get_select_response, select_server } from './lib/interaction';
+import { welcome, get_select_response, select_server, show_server_actions } from './lib/interaction';
 import { read_server_list } from './lib/configs';
 import { get_running_servers, get_snapshots, get_available_server_types } from './lib/api_calls';
 
@@ -39,7 +39,9 @@ async function main()
 		// console.log(server_list);
 
 		const selected_server = await select_server(server_list);
-		console.log(server_list.get(selected_server));
+		// console.log(server_list.get(selected_server));
+
+		const chosen_action = await show_server_actions(selected_server);
 	}
 	catch (error)
 	{
