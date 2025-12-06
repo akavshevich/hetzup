@@ -227,17 +227,19 @@ export async function get_available_server_types(): Promise<ServerType[]>
 
 type SnapshotDetails = 
 {
+	id: number,
+	status: 'available' | 'creating' | 'unavailable'
+};
+
+type SnapshotDetailsAPIStructure = 
+{
 	response: 
 	{
-		image: 
-		{
-			id: number,
-			status: 'available' | 'creating' | 'unavailable'
-		}
+		image: SnapshotDetails
 	}
 };
 
-type SnapshotDetailsAPIResponse = APIResponse & SnapshotDetails;
+type SnapshotDetailsAPIResponse = APIResponse & SnapshotDetailsAPIStructure;
 
 export async function initialize_snapshot_save(server: Server): Promise< number >
 {
@@ -256,7 +258,7 @@ export async function initialize_snapshot_save(server: Server): Promise< number 
 	throw new Error('Unable to create a snapshot: ' + snapshot_save_init_response.error);
 }
 
-export async function get_snapshot(snapshot_id: number)
+export async function get_snapshot(snapshot_id: number): Promise< SnapshotDetails >
 {
 	const get_snapshot_details = await call_hetzner_api(`images/${snapshot_id}`, 'GET') as SnapshotDetailsAPIResponse;
 
@@ -266,4 +268,16 @@ export async function get_snapshot(snapshot_id: number)
 	}
 
 	throw new Error('Unable to get snapshot: ' + get_snapshot_details.error);
+}
+
+export async function delete_server(server: Server)
+{
+	const delete_call = await call_hetzner_api(`servers/${server.id}`, 'DELETE');
+
+	if(delete_call.successful)
+	{
+		return;
+	}
+
+	throw new Error('Unable to stop server: ' + delete_call.error);
 }

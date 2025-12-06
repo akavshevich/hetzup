@@ -1,6 +1,8 @@
+import ora from 'ora';
+
 import { read_server_list } from './configs';
 import { log_error, error_to_string } from "./utils";
-import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot } from './api_calls';
+import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server } from './api_calls';
 import { Server, ServerList } from './types';
 
 export async function generate_server_list(): Promise< ServerList >
@@ -79,10 +81,11 @@ export async function save_server_to_snapshot(server: Server): Promise< void >
 {
 	try
 	{
-		console.log('Initializing new snapshot...');
+		const init_spinner = ora({text: 'Initializing new snapshot...', spinner: 'point', color: 'cyan'}).start();
 		const new_snapshot_id = await initialize_snapshot_save(server);
+		init_spinner.stop();
 
-		console.log('Saving server to snapshot...');
+		const check_spinner = ora({text: 'Saving server to snapshot...', spinner: 'point', color: 'green'}).start();
 
 		return new Promise(
 			function (resolve)
@@ -91,23 +94,44 @@ export async function save_server_to_snapshot(server: Server): Promise< void >
 					async function ()
 					{
 						const snapshot_details = await get_snapshot(new_snapshot_id);
-						if(snapshot_details.status === 'creating')
+						if(snapshot_details.status !== 'available')
 						{
 							return;
 						}
 
 						clearInterval(check_on_snapshot);
+						check_spinner.stop();
 						resolve();
 					},
 					2000
 				);
 			}
 		);
-
 	}
 	catch (error)
 	{
 		throw new Error(error_to_string(error));
 	}
+}
 
+export async function stop_server(server: Server, mode: 'save_stop' | 'stop' = 'save_stop')
+{
+	const stop_server_spinner = ora({text: 'Stopping server...', spinner: 'point', color: 'red'});
+
+	try
+	{
+		if(mode === 'save_stop')
+		{
+			await save_server_to_snapshot(server);
+		}
+
+		stop_server_spinner.start();
+		await delete_server(server);
+		stop_server_spinner.stop();
+	}
+	catch (error) 
+	{
+		stop_server_spinner.stop();
+		throw new Error(error_to_string(error));
+	}
 }

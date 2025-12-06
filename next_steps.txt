@@ -1,5 +1,4 @@
-Add nice loading messages and animations
-Implement deleting server
+Implement spinning up server from a snapshot
 
 DONE:
 Rewrite get_running_servers, move general logic to generic call_hetzner_api function
@@ -18,3 +17,5 @@ Change the full server list to specify active and inactive servers, not server/s
 Add useful info, such as server cores, ram and disk, number of snapshots. Format it with chalk
 Upon server selection, show options based on status
 Implement saving server to snapshot
+Add nice loading messages and animations
+Implement deleting server
