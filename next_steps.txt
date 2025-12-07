@@ -1,4 +1,4 @@
-Format date in a snapshot list
+Create a main menu
 
 DONE:
 Rewrite get_running_servers, move general logic to generic call_hetzner_api function
@@ -22,3 +22,4 @@ Implement deleting server
 Implement spinning up server from a snapshot
 Show existing snapshots for a server as a selectable list
 Implement deleting snapshots
+Format date in a snapshot list

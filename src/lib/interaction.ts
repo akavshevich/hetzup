@@ -1,5 +1,5 @@
 import readline from 'readline';
-import { error_to_string, round_to_precision } from './utils';
+import { error_to_string, format_date, round_to_precision } from './utils';
 import select from '@inquirer/select';
 import input from '@inquirer/input';
 import { Separator } from '@inquirer/prompts';
@@ -157,7 +157,7 @@ export async function show_snapshots(server: Server): Promise< number | string>
 	for (let index = 0; index < snapshots.length; index++)
 	{
 		const snapshot = snapshots[index];
-		snapshot_list.push({name: `${snapshot.date}: ${round_to_precision(snapshot.disk, 2)} GB`, value: snapshot.id});
+		snapshot_list.push({name: `${format_date(snapshot.date)} | ${round_to_precision(snapshot.disk, 2)} GB`, value: snapshot.id});
 	}
 
 	if(snapshot_list.length === 0)

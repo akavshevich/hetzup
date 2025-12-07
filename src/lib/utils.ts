@@ -45,3 +45,18 @@ export function round_to_precision(number: number, precision: number)
 	const precision_adjustment = Math.pow(10, precision);
 	return Math.round(number * precision_adjustment) / precision_adjustment;
 }
+
+export function format_date(date_str: string): string
+{
+	const date = new Date(date_str);
+
+	const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+	const month = months[date.getMonth()];
+
+	const day = date.getDate();
+	const year = date.getFullYear();
+	const hours = String(date.getHours()).padStart(2, '0');
+	const minutes = String(date.getMinutes()).padStart(2, '0');
+
+	return `${month} ${day} ${year}, ${hours}:${minutes}`;
+}
