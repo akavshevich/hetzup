@@ -2,7 +2,7 @@ import ora from 'ora';
 
 import { read_server_list } from './configs';
 import { log_error, error_to_string } from "./utils";
-import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server } from './api_calls';
+import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot } from './api_calls';
 import { NewServerDetails, Server, ServerList } from './types';
 
 export async function generate_server_list(): Promise< ServerList >
@@ -187,4 +187,18 @@ export async function spin_up_from_snapshot(server: Server, type: string, latest
 		throw new Error(error_to_string(error));
 	}
 
+}
+
+export async function delete_snapshot_visual(snapshot_id: number | string)
+{
+	try
+	{
+		const spinner = ora({text: 'Deleting snapshot...', spinner: 'point', color: 'red'});
+		await delete_snapshot(snapshot_id);
+		spinner.stop();
+	}
+	catch (error)
+	{
+		throw new Error(error_to_string(error));
+	}
 }

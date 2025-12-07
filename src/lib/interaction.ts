@@ -149,7 +149,7 @@ export async function show_server_actions(server: Server)
 	return await get_select_response(server.name + ':', server_actions_list);
 }
 
-export async function show_snapshots(server: Server)
+export async function show_snapshots(server: Server): Promise< number | string>
 {
 	const snapshots = server.snapshots.reverse();
 	const snapshot_list: SelectInquiryOptions = [];

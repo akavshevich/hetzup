@@ -1,11 +1,11 @@
 import { welcome, get_select_response, select_server, show_server_actions, show_snapshots } from './lib/interaction';
 import { read_server_list } from './lib/configs';
-import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, delete_server } from './lib/api_calls';
+import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, delete_server, delete_snapshot } from './lib/api_calls';
 
 import select, { Separator } from '@inquirer/select';
 import chalk from 'chalk';
 import readline from 'readline';
-import { generate_server_list, save_server_to_snapshot, spin_up_from_snapshot, stop_server } from './lib/server_actions';
+import { delete_snapshot_visual, generate_server_list, save_server_to_snapshot, spin_up_from_snapshot, stop_server } from './lib/server_actions';
 
 
 
@@ -52,8 +52,9 @@ async function main()
 		// const new_server = await spin_up_from_snapshot(selected_server, 'cpx11');
 		// console.log(new_server);
 
-		const snapshots = await show_snapshots(selected_server);
-		console.log(snapshots);
+		const snapshot = await show_snapshots(selected_server);
+		await delete_snapshot_visual(snapshot);
+		console.log(snapshot, 'deleted');
 	}
 	catch (error)
 	{

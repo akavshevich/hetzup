@@ -360,3 +360,15 @@ export async function get_server(server_id: number): Promise<Server>
 
 	throw new Error('Unable to get server: ' + get_server_details.error);
 }
+
+export async function delete_snapshot(snapshot_id: number | string): Promise< void >
+{
+	const delete_snapshot_call = await call_hetzner_api(`images/${snapshot_id}`, 'DELETE');
+
+	if(delete_snapshot_call.successful)
+	{
+		return;
+	}
+
+	throw new Error('Unable to delete snapshot: ' + delete_snapshot_call.error);
+}
