@@ -1,4 +1,5 @@
-Implement spinning up server from a snapshot
+Show existing snapshots for a server as a selectable list
+Implement deleting snapshots
 
 DONE:
 Rewrite get_running_servers, move general logic to generic call_hetzner_api function
@@ -19,3 +20,4 @@ Upon server selection, show options based on status
 Implement saving server to snapshot
 Add nice loading messages and animations
 Implement deleting server
+Implement spinning up server from a snapshot

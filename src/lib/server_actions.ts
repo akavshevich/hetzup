@@ -2,8 +2,8 @@ import ora from 'ora';
 
 import { read_server_list } from './configs';
 import { log_error, error_to_string } from "./utils";
-import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server } from './api_calls';
-import { Server, ServerList } from './types';
+import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server } from './api_calls';
+import { NewServerDetails, Server, ServerList } from './types';
 
 export async function generate_server_list(): Promise< ServerList >
 {
@@ -33,6 +33,8 @@ export async function generate_server_list(): Promise< ServerList >
 			{id: server.id, name: server.name, status: 'running', snapshots: [], cores: server.cores, disk: server.disk, memory: server.memory}
 		);
 	}
+
+	console.log(snapshots);
 
 	for(const snapshot of snapshots)
 	{
@@ -81,11 +83,12 @@ export async function save_server_to_snapshot(server: Server): Promise< void >
 {
 	try
 	{
-		const init_spinner = ora({text: 'Initializing new snapshot...', spinner: 'point', color: 'cyan'}).start();
+		const spinner = ora({text: `Initializing new snapshot for ${server.name}...`, spinner: 'point', color: 'cyan'}).start();
 		const new_snapshot_id = await initialize_snapshot_save(server);
-		init_spinner.stop();
 
-		const check_spinner = ora({text: 'Saving server to snapshot...', spinner: 'point', color: 'green'}).start();
+		spinner.color = 'green';
+		spinner.text = `Saving ${server.name} to snapshot...`;
+		// const check_spinner = ora({text: 'Saving server to snapshot...', spinner: 'point', color: 'green'}).start();
 
 		return new Promise(
 			function (resolve)
@@ -100,7 +103,7 @@ export async function save_server_to_snapshot(server: Server): Promise< void >
 						}
 
 						clearInterval(check_on_snapshot);
-						check_spinner.stop();
+						spinner.stop();
 						resolve();
 					},
 					2000
@@ -116,7 +119,7 @@ export async function save_server_to_snapshot(server: Server): Promise< void >
 
 export async function stop_server(server: Server, mode: 'save_stop' | 'stop' = 'save_stop')
 {
-	const stop_server_spinner = ora({text: 'Stopping server...', spinner: 'point', color: 'red'});
+	const stop_server_spinner = ora({text: `Stopping ${server.name}...`, spinner: 'point', color: 'red'});
 
 	try
 	{
@@ -134,4 +137,57 @@ export async function stop_server(server: Server, mode: 'save_stop' | 'stop' = '
 		stop_server_spinner.stop();
 		throw new Error(error_to_string(error));
 	}
+}
+
+export async function spin_up_from_snapshot(server: Server, type: string, latest: boolean = true, snapshot_id?: number): Promise< Server >
+{
+	if(server.status !== 'inactive')
+	{
+		throw new Error('Server is already running');
+	}
+
+	if(latest || !snapshot_id)
+	{
+		snapshot_id = server.id;
+	}
+
+	try
+	{
+		const spinner = ora({text: `Initializing ${server.name}...`, spinner: 'point', color: 'cyan'}).start();
+		const new_server_details = await spin_up_server(snapshot_id, server.name, type);
+
+		return new Promise(
+			function (resolve)
+			{
+				const check_on_server = setInterval(
+					async function ()
+					{
+						const server_details = await get_server(new_server_details.id);
+						
+						if(server_details.status === 'starting')
+						{
+							spinner.color = 'green';
+						}
+						
+						if(server_details.status !== 'running')
+						{
+							const capitalized_status = String(server_details.status).charAt(0).toUpperCase() + String(server_details.status).slice(1);
+							spinner.text = `${capitalized_status} ${server.name}...`;
+							return;
+						}
+
+						clearInterval(check_on_server);
+						spinner.stop();
+						resolve(server_details);
+					},
+					2000
+				);
+			}
+		);
+	}
+	catch (error)
+	{
+		throw new Error(error_to_string(error));
+	}
+
 }

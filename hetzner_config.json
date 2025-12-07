@@ -1,4 +1,5 @@
 {
 	"api_token": "",
-	"preferred_location": ""
+	"preferred_location": "",
+	"ssh_keys": []
 }

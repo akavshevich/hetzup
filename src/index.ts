@@ -5,7 +5,7 @@ import { get_running_servers, get_snapshots, get_available_server_types, initial
 import select, { Separator } from '@inquirer/select';
 import chalk from 'chalk';
 import readline from 'readline';
-import { generate_server_list, save_server_to_snapshot, stop_server } from './lib/server_actions';
+import { generate_server_list, save_server_to_snapshot, spin_up_from_snapshot, stop_server } from './lib/server_actions';
 
 
 
@@ -39,7 +39,7 @@ async function main()
 		// console.log(server_list);
 
 		const selected_server = await select_server(server_list);
-		// console.log(server_list.get(selected_server));
+		// console.log(server_list.get(selected_server.name));
 
 		// const chosen_action = await show_server_actions(selected_server);
 
@@ -48,6 +48,9 @@ async function main()
 
 		// await save_server_to_snapshot(selected_server);
 		await stop_server(selected_server);
+
+		// const new_server = await spin_up_from_snapshot(selected_server, 'cpx11');
+		// console.log(new_server);
 	}
 	catch (error)
 	{

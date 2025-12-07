@@ -1,7 +1,7 @@
 import { read_hetzner_config } from "./configs";
 import axios from 'axios';
 import { log_error, error_to_string } from "./utils";
-import { Server } from "./types";
+import { NewServerDetails, Server } from "./types";
 
 const hetzner_config = read_hetzner_config();
 
@@ -88,23 +88,37 @@ async function call_hetzner_api(path: string, method: APIMethod, fields: APIFiel
 
 type RunningServer = {id: number, name: string, cores: number, disk: number, memory: number};
 
+type ServerAPIStructure = 
+{
+	id: number, 
+	name: string,
+	status: 'running' | 'initializing' | 'starting' | 'stopping' | 'off' | 'deleting' | 'migrating' | 'rebuilding' | 'unknown',
+	server_type:
+	{
+		cores: number,
+		disk: number,
+		memory: number
+	},
+	public_net:
+	{
+		ipv4:
+		{
+			ip: string
+		},
+		ipv6:
+		{
+			ip: string
+		}
+	}
+};
+
 type ServersAPIStructure = 
 {
 	response:
 	{
 		servers: 
 		[
-			{
-				id: number, 
-				name: string,
-				status: 'running' | 'initializing' | 'starting' | 'stopping' | 'off' | 'deleting' | 'migrating' | 'rebuilding' | 'unknown',
-				server_type:
-				{
-					cores: number,
-					disk: number,
-					memory: number
-				}
-			}
+			ServerAPIStructure
 		]
 	}
 };
@@ -280,4 +294,69 @@ export async function delete_server(server: Server)
 	}
 
 	throw new Error('Unable to stop server: ' + delete_call.error);
+}
+
+type SingleServerAPIStructure = 
+{
+	response:
+	{
+		server: ServerAPIStructure
+	}
+};
+
+type SingleServerAPIResponse = APIResponse & SingleServerAPIStructure;
+
+
+export async function spin_up_server(image: number, name: string | number, type: string, location?: string): Promise< NewServerDetails >
+{
+	const server_config = 
+	{
+		image: image,
+		name: name,
+		location: hetzner_config.preferred_location,
+		server_type: type,
+		ssh_keys: hetzner_config.ssh_keys
+	};
+
+	if(location)
+	{
+		server_config.location = location;
+	}
+
+	const call = await call_hetzner_api('servers', 'POST', server_config) as SingleServerAPIResponse;
+
+	if(call.successful)
+	{
+		const new_server_init = call.response.server;
+		return {
+			id: new_server_init.id, 
+			ipv4: new_server_init.public_net.ipv4.ip, 
+			ipv6: new_server_init.public_net.ipv6.ip, 
+			status: new_server_init.status
+		};
+	}
+
+	throw new Error('Unable to spin up server: ' + call.error);
+}
+
+export async function get_server(server_id: number): Promise<Server>
+{
+	const get_server_details = await call_hetzner_api(`servers/${server_id}`, 'GET') as SingleServerAPIResponse;
+
+	if(get_server_details.successful)
+	{
+		const server = get_server_details.response.server;
+
+		return {
+			id: server.id, 
+			name: server.name, 
+			cores: server.server_type.cores, 
+			disk: server.server_type.disk, 
+			memory: server.server_type.memory, 
+			status:server.status, 
+			snapshots: []
+		};
+	}
+
+	throw new Error('Unable to get server: ' + get_server_details.error);
 }
