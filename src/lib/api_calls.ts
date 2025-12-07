@@ -149,7 +149,7 @@ export async function get_running_servers(): Promise<RunningServer[]>
 	}
 }
 
-export async function get_snapshots(): Promise<{id: number, name: string, disk: number}[]>
+export async function get_snapshots(): Promise<{id: number, name: string, date: string, disk: number}[]>
 {
 	const call = await call_hetzner_api('images', 'GET', {type: 'snapshot'});
 

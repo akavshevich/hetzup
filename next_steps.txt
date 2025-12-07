@@ -1,4 +1,3 @@
-Show existing snapshots for a server as a selectable list
 Implement deleting snapshots
 
 DONE:
@@ -21,3 +20,4 @@ Implement saving server to snapshot
 Add nice loading messages and animations
 Implement deleting server
 Implement spinning up server from a snapshot
+Show existing snapshots for a server as a selectable list

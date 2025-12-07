@@ -40,8 +40,8 @@ export function error_to_string(error: unknown): string
 	}
 }
 
-// export = 
-// {
-// 	log_error,
-// 	error_to_string
-// }
+export function round_to_precision(number: number, precision: number)
+{
+	const precision_adjustment = Math.pow(10, precision);
+	return Math.round(number * precision_adjustment) / precision_adjustment;
+}

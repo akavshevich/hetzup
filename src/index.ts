@@ -1,4 +1,4 @@
-import { welcome, get_select_response, select_server, show_server_actions } from './lib/interaction';
+import { welcome, get_select_response, select_server, show_server_actions, show_snapshots } from './lib/interaction';
 import { read_server_list } from './lib/configs';
 import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, delete_server } from './lib/api_calls';
 
@@ -47,10 +47,13 @@ async function main()
 		// console.log(snapshot_save_init_response);
 
 		// await save_server_to_snapshot(selected_server);
-		await stop_server(selected_server);
+		// await stop_server(selected_server);
 
 		// const new_server = await spin_up_from_snapshot(selected_server, 'cpx11');
 		// console.log(new_server);
+
+		const snapshots = await show_snapshots(selected_server);
+		console.log(snapshots);
 	}
 	catch (error)
 	{

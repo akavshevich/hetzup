@@ -1,5 +1,5 @@
 import readline from 'readline';
-import { error_to_string } from './utils';
+import { error_to_string, round_to_precision } from './utils';
 import select from '@inquirer/select';
 import input from '@inquirer/input';
 import { Separator } from '@inquirer/prompts';
@@ -40,7 +40,7 @@ export async function get_text_response(prompt: string): Promise<string>
 	}
 }
 
-type SelectInquiryOptions = ( {name: string, value: string | number, description?: string} | Separator)[];
+type SelectInquiryOptions = ( {name: string, value: string | number, description?: string, disabled?: boolean} | Separator)[];
 
 export async function get_select_response(prompt: string, options: SelectInquiryOptions): Promise<string | number>
 {
@@ -87,7 +87,7 @@ export async function select_server(servers: ServerList): Promise< Server>
 			}
 			else
 			{
-				display_server += ' | Required disk space: ' + Math.round(server.disk * 100) / 100 + ' GB';
+				display_server += ' | Required disk space: ' + round_to_precision(server.disk, 2) + ' GB';
 			}
 
 			server_select_list.push({name: display_server, value: server_name});
@@ -147,4 +147,26 @@ export async function show_server_actions(server: Server)
 	}
 
 	return await get_select_response(server.name + ':', server_actions_list);
+}
+
+export async function show_snapshots(server: Server)
+{
+	const snapshots = server.snapshots.reverse();
+	const snapshot_list: SelectInquiryOptions = [];
+
+	for (let index = 0; index < snapshots.length; index++)
+	{
+		const snapshot = snapshots[index];
+		snapshot_list.push({name: `${snapshot.date}: ${round_to_precision(snapshot.disk, 2)} GB`, value: snapshot.id});
+	}
+
+	if(snapshot_list.length === 0)
+	{
+		snapshot_list.push({name: 'No snapshots available', value: 0, disabled: true});
+	}
+
+	snapshot_list.push(new Separator());
+	snapshot_list.push({name: 'Back', value: 'back'});
+
+	return await get_select_response(`Snapshots for ${server.name}:`, snapshot_list);
 }

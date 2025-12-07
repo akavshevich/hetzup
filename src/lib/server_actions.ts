@@ -34,8 +34,6 @@ export async function generate_server_list(): Promise< ServerList >
 		);
 	}
 
-	console.log(snapshots);
-
 	for(const snapshot of snapshots)
 	{
 		const existing_server = servers.get(snapshot.name);
@@ -44,7 +42,7 @@ export async function generate_server_list(): Promise< ServerList >
 		{
 			servers.set(
 				snapshot.name, 
-				{id: snapshot.id, name: snapshot.name, status: 'inactive', snapshots: [{id: snapshot.id}], disk: snapshot.disk}
+				{id: snapshot.id, name: snapshot.name, status: 'inactive', snapshots: [{id: snapshot.id, date: snapshot.date, disk: snapshot.disk}], disk: snapshot.disk}
 			);
 			continue;
 		}
@@ -54,7 +52,7 @@ export async function generate_server_list(): Promise< ServerList >
 			id: existing_server.id,
 			name: existing_server.name,
 			status: existing_server.status, 
-			snapshots: [...existing_server.snapshots, {id: snapshot.id}],
+			snapshots: [...existing_server.snapshots, {id: snapshot.id, date: snapshot.date, disk: snapshot.disk}],
 			disk: existing_server.disk
 		};
 
@@ -88,7 +86,6 @@ export async function save_server_to_snapshot(server: Server): Promise< void >
 
 		spinner.color = 'green';
 		spinner.text = `Saving ${server.name} to snapshot...`;
-		// const check_spinner = ora({text: 'Saving server to snapshot...', spinner: 'point', color: 'green'}).start();
 
 		return new Promise(
 			function (resolve)
@@ -143,7 +140,7 @@ export async function spin_up_from_snapshot(server: Server, type: string, latest
 {
 	if(server.status !== 'inactive')
 	{
-		throw new Error('Server is already running');
+		throw new Error(`${server.name} is already running`);
 	}
 
 	if(latest || !snapshot_id)
