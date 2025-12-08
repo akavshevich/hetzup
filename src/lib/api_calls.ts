@@ -262,7 +262,10 @@ export async function initialize_snapshot_save(server: Server): Promise< number 
 		throw new Error('Unable to create a snapshot: Server is not running');
 	}
 
-	const snapshot_save_init_response = await call_hetzner_api(`servers/${server.id}/actions/create_image`, 'POST') as SnapshotDetailsAPIResponse;
+	const snapshot_save_init_response = await call_hetzner_api(
+		`servers/${server.id}/actions/create_image`, 
+		'POST', {description: server.name}
+	) as SnapshotDetailsAPIResponse;
 	
 	if(snapshot_save_init_response.successful)
 	{

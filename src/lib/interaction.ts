@@ -44,7 +44,7 @@ type SelectInquiryOptions = ( {name: string, value: string | number, description
 
 export async function get_select_response(prompt: string, options: SelectInquiryOptions): Promise<string | number>
 {
-	const params = {'message': prompt, choices: options};
+	const params = {'message': prompt, choices: options, loop: false};
 	
 	try
 	{
@@ -72,7 +72,7 @@ function startup(command: string): void{
 	}
 }
 
-export async function select_server(servers: ServerList): Promise< Server>
+export async function select_server(servers: ServerList): Promise< Server | false>
 {
 	const server_select_list: SelectInquiryOptions = [];
 
@@ -94,9 +94,18 @@ export async function select_server(servers: ServerList): Promise< Server>
 		}
 	);
 
+	server_select_list.push(new Separator());
+	server_select_list.push({name: 'Back', value: 0});
+
 	try
 	{
 		const selected_server_name = await get_select_response('Choose server', server_select_list);
+
+		if(selected_server_name === 0)
+		{
+			return false;
+		}
+
 		const selected_server = servers.get(selected_server_name);
 
 		if(selected_server)
@@ -114,7 +123,7 @@ export async function select_server(servers: ServerList): Promise< Server>
 	}
 }
 
-export async function show_server_actions(server: Server)
+export async function show_server_actions(server: Server): Promise<string | number | false>
 {
 	const server_actions_list: SelectInquiryOptions = [];
 
@@ -130,7 +139,7 @@ export async function show_server_actions(server: Server)
 		
 		server_actions_list.push({name: 'Stop without saving', value: 'stop'});
 		server_actions_list.push(new Separator());
-		server_actions_list.push({name: 'Back', value: 'back'});
+		server_actions_list.push({name: 'Back', value: 0});
 	}
 	else if(server.status === 'inactive')
 	{
@@ -138,7 +147,7 @@ export async function show_server_actions(server: Server)
 		server_actions_list.push({name: 'Select snapshot to spin up from', value: 'spin_up_select'});
 		server_actions_list.push({name: 'Select snapshot(s) to delete', value: 'delete_snapshots'});
 		server_actions_list.push(new Separator());
-		server_actions_list.push({name: 'Back', value: 'back'});
+		server_actions_list.push({name: 'Back', value: 0});
 	}
 	else
 	{
@@ -146,7 +155,13 @@ export async function show_server_actions(server: Server)
 		return 'none';
 	}
 
-	return await get_select_response(server.name + ':', server_actions_list);
+	const selected_action =  await get_select_response(server.name + ':', server_actions_list);
+	if(selected_action === 0)
+	{
+		return false;
+	}
+
+	return selected_action;
 }
 
 export async function show_snapshots(server: Server): Promise< number | string>
@@ -169,4 +184,18 @@ export async function show_snapshots(server: Server): Promise< number | string>
 	snapshot_list.push({name: 'Back', value: 'back'});
 
 	return await get_select_response(`Snapshots for ${server.name}:`, snapshot_list);
+}
+
+export async function show_main_menu(): Promise< string | number >
+{
+	const main_menu: SelectInquiryOptions = 
+	[
+		{name: 'My Servers', value: 'servers'},
+		{name: 'New Server', value: 'new_server'},
+		{name: 'Configure', value: 'configure'},
+		new Separator(),
+		{name: 'Exit', value: 'exit'}
+	];
+
+	return await get_select_response('Welcome to Hetzner Server Manager!', main_menu);
 }
