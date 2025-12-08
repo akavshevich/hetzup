@@ -2,8 +2,9 @@ import ora from 'ora';
 
 import { read_server_list } from './configs';
 import { log_error, error_to_string } from "./utils";
-import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot } from './api_calls';
+import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image } from './api_calls';
 import { NewServerDetails, Server, ServerList } from './types';
+import { snapshot } from 'node:test';
 
 export async function generate_server_list(): Promise< ServerList >
 {
@@ -196,6 +197,43 @@ export async function delete_snapshot_visual(snapshot_id: number | string)
 		const spinner = ora({text: 'Deleting snapshot...', spinner: 'point', color: 'red'});
 		await delete_snapshot(snapshot_id);
 		spinner.stop();
+	}
+	catch (error)
+	{
+		throw new Error(error_to_string(error));
+	}
+}
+
+export async function revert_to_snapshot(server: Server, snapshot_id: number | string): Promise<void>
+{
+	try
+	{
+		const spinner = ora({text: `Reverting ${server.name} to a previous snapshot...`, spinner: 'point', color: 'cyan'}).start();
+		await rebuild_server_from_image(server, snapshot_id);
+
+		return new Promise<void>(
+			function (resolve)
+			{
+				const check_on_server = setInterval(
+					async function ()
+					{
+						const server_details = await get_server(server.id);
+
+						if(server_details.status !== 'running')
+						{
+							const capitalized_status = String(server_details.status).charAt(0).toUpperCase() + String(server_details.status).slice(1);
+							spinner.text = `${capitalized_status} ${server.name}...`;
+							return;
+						}
+
+						clearInterval(check_on_server);
+						spinner.stop();
+						resolve();
+					},
+					2000
+				);
+			}
+		);
 	}
 	catch (error)
 	{

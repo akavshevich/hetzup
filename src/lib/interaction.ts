@@ -44,7 +44,7 @@ type SelectInquiryOptions = ( {name: string, value: string | number, description
 
 export async function get_select_response(prompt: string, options: SelectInquiryOptions): Promise<string | number>
 {
-	const params = {'message': prompt, choices: options, loop: false};
+	const params = {message: prompt, choices: options, loop: false, theme: {prefix: ''}};
 	
 	try
 	{
@@ -138,22 +138,21 @@ export async function show_server_actions(server: Server): Promise<string | numb
 		}
 		
 		server_actions_list.push({name: 'Stop without saving', value: 'stop'});
-		server_actions_list.push(new Separator());
-		server_actions_list.push({name: 'Back', value: 0});
 	}
 	else if(server.status === 'inactive')
 	{
 		server_actions_list.push({name: 'Spin up from last snapshot', value: 'spin_up_last'});
 		server_actions_list.push({name: 'Select snapshot to spin up from', value: 'spin_up_select'});
-		server_actions_list.push({name: 'Select snapshot(s) to delete', value: 'delete_snapshots'});
-		server_actions_list.push(new Separator());
-		server_actions_list.push({name: 'Back', value: 0});
 	}
 	else
 	{
 		console.log('No actions available as the server status is ' + server.status);
 		return 'none';
 	}
+
+	server_actions_list.push({name: 'Select snapshot(s) to delete', value: 'delete_snapshots'});
+	server_actions_list.push(new Separator());
+	server_actions_list.push({name: 'Back', value: 0});
 
 	const selected_action =  await get_select_response(server.name + ':', server_actions_list);
 	if(selected_action === 0)
@@ -164,7 +163,7 @@ export async function show_server_actions(server: Server): Promise<string | numb
 	return selected_action;
 }
 
-export async function show_snapshots(server: Server): Promise< number | string>
+export async function show_snapshots(server: Server): Promise< number | string | false>
 {
 	const snapshots = server.snapshots.reverse();
 	const snapshot_list: SelectInquiryOptions = [];
@@ -181,9 +180,16 @@ export async function show_snapshots(server: Server): Promise< number | string>
 	}
 
 	snapshot_list.push(new Separator());
-	snapshot_list.push({name: 'Back', value: 'back'});
+	snapshot_list.push({name: 'Back', value: 0});
 
-	return await get_select_response(`Snapshots for ${server.name}:`, snapshot_list);
+	const selected_snapshot =  await get_select_response(`Snapshots for ${server.name}:`, snapshot_list);
+
+	if(selected_snapshot === 0)
+	{
+		return false;
+	}
+
+	return selected_snapshot;
 }
 
 export async function show_main_menu(): Promise< string | number >

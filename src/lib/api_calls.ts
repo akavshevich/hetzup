@@ -375,3 +375,42 @@ export async function delete_snapshot(snapshot_id: number | string): Promise< vo
 
 	throw new Error('Unable to delete snapshot: ' + delete_snapshot_call.error);
 }
+
+export async function rebuild_server_from_image(server: Server, snapshot_id: number | string)
+{
+	if(server.status !== 'running')
+	{
+		throw new Error(`Server ${server.name} can't be reverted to a previous snapshot as it is inactive`);
+	}
+
+	let chosen_snapshot;
+
+	for (let index = 0; index < server.snapshots.length; index++)
+	{
+		const snapshot = server.snapshots[index];
+		
+		if(snapshot.id == snapshot_id)
+		{
+			chosen_snapshot = snapshot;
+		}
+	}
+
+	if(!chosen_snapshot)
+	{
+		throw new Error(`Snapshot ID ${snapshot_id} is not available for ${server.name}.`);
+	}
+
+	if(chosen_snapshot.disk > server.disk)
+	{
+		throw new Error(`${server.name} doesn't have enough disk space to fit snapshot ID ${snapshot_id}.`);
+	}
+
+	const rebuild_call = await call_hetzner_api(`servers/${server.id}/actions/rebuild`, 'POST', {image: snapshot_id});
+
+	if(rebuild_call.successful)
+	{
+		return;
+	}
+
+	throw new Error('Unable to revert to snapshot: ' + rebuild_call.error);
+}

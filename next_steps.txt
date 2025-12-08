@@ -1,4 +1,5 @@
-Implement revert to previous snapshot
+Implement complete server removal (both server and snapshots)
+Add warning and confirmation for dangerous server actions: revert, stop without saving, complete removal, snapshot deletion
 Implement UI for all server actions 
 
 DONE:
