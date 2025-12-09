@@ -1,7 +1,7 @@
 import ora from 'ora';
 
 import { read_server_list } from './configs';
-import { log_error, error_to_string, sleep } from "./utils";
+import { log_error, error_to_string, sleep, format_date } from "./utils";
 import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image } from './api_calls';
 import { NewServerDetails, Server, ServerList } from './types';
 import { snapshot } from 'node:test';
@@ -79,9 +79,9 @@ export async function generate_server_list(): Promise< ServerList >
 
 export async function save_server_to_snapshot(server: Server): Promise< void >
 {
+	const spinner = ora({text: `Initializing new snapshot for ${server.name}...`, spinner: 'point', color: 'cyan'}).start();
 	try
 	{
-		const spinner = ora({text: `Initializing new snapshot for ${server.name}...`, spinner: 'point', color: 'cyan'}).start();
 		const new_snapshot_id = await initialize_snapshot_save(server);
 
 		spinner.color = 'green';
@@ -110,6 +110,7 @@ export async function save_server_to_snapshot(server: Server): Promise< void >
 	}
 	catch (error)
 	{
+		spinner.stop();
 		throw new Error(error_to_string(error));
 	}
 }
@@ -148,9 +149,9 @@ export async function spin_up_from_snapshot(server: Server, type: string, latest
 		snapshot_id = server.id;
 	}
 
+	const spinner = ora({text: `Initializing ${server.name}...`, spinner: 'point', color: 'cyan'}).start();
 	try
 	{
-		const spinner = ora({text: `Initializing ${server.name}...`, spinner: 'point', color: 'cyan'}).start();
 		const new_server_details = await spin_up_server(snapshot_id, server.name, type);
 
 		return new Promise(
@@ -184,6 +185,7 @@ export async function spin_up_from_snapshot(server: Server, type: string, latest
 	}
 	catch (error)
 	{
+		spinner.stop();
 		throw new Error(error_to_string(error));
 	}
 
@@ -191,23 +193,25 @@ export async function spin_up_from_snapshot(server: Server, type: string, latest
 
 export async function delete_snapshot_visual(snapshot_id: number | string)
 {
+	const spinner = ora({text: 'Deleting snapshot...', spinner: 'point', color: 'red'}).start();
 	try
 	{
-		const spinner = ora({text: 'Deleting snapshot...', spinner: 'point', color: 'red'}).start();
 		await delete_snapshot(snapshot_id);
 		spinner.stop();
 	}
 	catch (error)
 	{
+		spinner.stop();
 		throw new Error(error_to_string(error));
 	}
 }
 
 export async function revert_to_snapshot(server: Server, snapshot_id: number | string): Promise<void>
 {
+	const spinner = ora({text: `Reverting ${server.name} to a previous snapshot...`, spinner: 'point', color: 'cyan'}).start();
+
 	try
 	{
-		const spinner = ora({text: `Reverting ${server.name} to a previous snapshot...`, spinner: 'point', color: 'cyan'}).start();
 		await rebuild_server_from_image(server, snapshot_id);
 
 		return new Promise<void>(
@@ -236,15 +240,36 @@ export async function revert_to_snapshot(server: Server, snapshot_id: number | s
 	}
 	catch (error)
 	{
+		spinner.stop();
 		throw new Error(error_to_string(error));
 	}
 }
 
 export async function complete_server_removal(server: Server)
 {
-	for (let index = 0; index < server.snapshots.length; index++)
+	const spinner = ora({text: 'Deleting snapshot...', spinner: 'point', color: 'red'}).start();
+	
+	try
 	{
-		const snapshot = server.snapshots[index];
-		
+		for (let index = 0; index < server.snapshots.length; index++)
+		{
+			const snapshot = server.snapshots[index];
+			spinner.text = `Deleting ${format_date(snapshot.date)} snapshot for ${server.name}...`;
+			await delete_snapshot(snapshot.id);
+			await sleep(1000);
+		}
+
+		if(server.status !== 'inactive')
+		{
+			spinner.text = `Deleting ${server.name}...`;
+			await delete_server(server);
+		}
+
+		spinner.stop();
+	}
+	catch (error)
+	{
+		spinner.stop();
+		throw new Error(error_to_string(error));
 	}
 }

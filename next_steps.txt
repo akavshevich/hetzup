@@ -1,4 +1,3 @@
-Implement complete server removal (both server and snapshots)
 Add warning and confirmation for dangerous server actions: revert, stop without saving, complete removal, snapshot deletion
 Implement UI for all server actions 
 
@@ -27,3 +26,5 @@ Implement deleting snapshots
 Format date in a snapshot list
 Create a main menu
 Implement revert to previous snapshot
+Added sleep function for timing burst requests apart
+Implement complete server removal (both server and snapshots)
