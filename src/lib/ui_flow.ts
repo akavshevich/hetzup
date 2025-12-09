@@ -2,6 +2,7 @@ import ora from "ora";
 import { select_server, show_main_menu, show_server_actions } from "./interaction";
 import { generate_server_list } from "./server_actions";
 import { Server } from "./types";
+import { sleep } from "./utils";
 
 export async function main(navigate_to?: string)
 {
@@ -14,10 +15,10 @@ export async function main(navigate_to?: string)
 	switch (main_menu_response)
 	{
 		case 'servers':
-			const spinner = ora({text: 'Loading servers...', spinner: 'boxBounce'});
+			const spinner = ora({text: 'Loading servers...', spinner: 'boxBounce'}).start();
 			const server_list = await generate_server_list();
 			spinner.stop();
-			
+
 			const selected_server = await select_server(server_list);
 
 			if(!selected_server)

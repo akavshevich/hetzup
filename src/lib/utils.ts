@@ -60,3 +60,19 @@ export function format_date(date_str: string): string
 
 	return `${month} ${day} ${year}, ${hours}:${minutes}`;
 }
+
+export function sleep(ms: number)
+{
+	return new Promise<void>(
+		function (resolve)
+		{
+			setTimeout(
+				function ()
+				{
+					resolve();
+				},
+				ms
+			);
+		}
+	);
+}

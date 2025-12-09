@@ -44,7 +44,7 @@ type SelectInquiryOptions = ( {name: string, value: string | number, description
 
 export async function get_select_response(prompt: string, options: SelectInquiryOptions): Promise<string | number>
 {
-	const params = {message: prompt, choices: options, loop: false, theme: {prefix: ''}};
+	const params = {message: prompt, choices: options, loop: false, pageSize: 9, theme: {prefix: ''}};
 	
 	try
 	{
@@ -151,6 +151,7 @@ export async function show_server_actions(server: Server): Promise<string | numb
 	}
 
 	server_actions_list.push({name: 'Select snapshot(s) to delete', value: 'delete_snapshots'});
+	server_actions_list.push({name: chalk.red('Delete completely'), value: 'delete_completely'});
 	server_actions_list.push(new Separator());
 	server_actions_list.push({name: 'Back', value: 0});
 

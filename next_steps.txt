@@ -26,3 +26,4 @@ Show existing snapshots for a server as a selectable list
 Implement deleting snapshots
 Format date in a snapshot list
 Create a main menu
+Implement revert to previous snapshot

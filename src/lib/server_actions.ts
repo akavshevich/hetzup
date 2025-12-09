@@ -1,7 +1,7 @@
 import ora from 'ora';
 
 import { read_server_list } from './configs';
-import { log_error, error_to_string } from "./utils";
+import { log_error, error_to_string, sleep } from "./utils";
 import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image } from './api_calls';
 import { NewServerDetails, Server, ServerList } from './types';
 import { snapshot } from 'node:test';
@@ -74,7 +74,6 @@ export async function generate_server_list(): Promise< ServerList >
 		);
 		
 	}
-
 	return servers;
 }
 
@@ -194,7 +193,7 @@ export async function delete_snapshot_visual(snapshot_id: number | string)
 {
 	try
 	{
-		const spinner = ora({text: 'Deleting snapshot...', spinner: 'point', color: 'red'});
+		const spinner = ora({text: 'Deleting snapshot...', spinner: 'point', color: 'red'}).start();
 		await delete_snapshot(snapshot_id);
 		spinner.stop();
 	}
@@ -238,5 +237,14 @@ export async function revert_to_snapshot(server: Server, snapshot_id: number | s
 	catch (error)
 	{
 		throw new Error(error_to_string(error));
+	}
+}
+
+export async function complete_server_removal(server: Server)
+{
+	for (let index = 0; index < server.snapshots.length; index++)
+	{
+		const snapshot = server.snapshots[index];
+		
 	}
 }
