@@ -226,3 +226,14 @@ export async function confirm_dangerous(message: string, critical: boolean = fal
 	}
 	return false;
 }
+
+export async function show_error(error: any)
+{
+	const exit_program = await get_select_response(chalk.red('Error: ' + error_to_string(error)), [{name: 'Back', value: 0}, {name: 'Exit', value: 1}]);
+	if(exit_program)
+	{
+		process.exit();
+	}
+
+	return;
+}
