@@ -30,7 +30,9 @@ export async function get_text_response(prompt: string): Promise<string>
 {
 	try
 	{
-		const get_answer = await input({ message: prompt });
+		const get_answer = await input({ message: prompt, theme: {prefix: ''} });
+		readline.moveCursor(process.stdout, 0, -1); // Move up 1 line
+		readline.clearLine(process.stdout, 0); // Clear the line
 		return get_answer;
 	}
 	catch(error)
@@ -205,4 +207,25 @@ export async function show_main_menu(): Promise< string | number >
 	];
 
 	return await get_select_response('Welcome to Hetzner Server Manager!', main_menu);
+}
+
+export async function confirm_dangerous(message: string, critical: boolean = false): Promise<boolean>
+{
+	if(critical)
+	{
+		const response = await get_text_response(chalk.red(message) + " Type 'yes' to confirm.");
+
+		if(response === 'yes')
+		{
+			return true;
+		}
+		return false;
+	}
+
+	const response = await get_select_response(chalk.red(message), [{name: 'Yes', value: 1}, {name: 'No', value: 0}]);
+	if(response)
+	{
+		return true;
+	}
+	return false;
 }

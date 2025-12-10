@@ -1,5 +1,12 @@
-Add warning and confirmation for dangerous server actions: revert, stop without saving, complete removal, snapshot deletion
-Implement UI for all server actions 
+Implement UI for all server actions
+Add confirmation for revert, stop without saving, complete removal, snapshot deletion
+Implement config write for hetzner_config.json and servers.json
+Save server type, location, IPs used and other useful info on each server upon inactivating
+Implement listing of primary IPs
+When spinning up from snapshot, use saved server info if available
+Implement custom spin up from snapshot where these details can be changed
+Add quick start / quick stop that reverses the latest inactivated / spun up server as a first main menu option
+
 
 DONE:
 Rewrite get_running_servers, move general logic to generic call_hetzner_api function
@@ -28,3 +35,4 @@ Create a main menu
 Implement revert to previous snapshot
 Added sleep function for timing burst requests apart
 Implement complete server removal (both server and snapshots)
+Implement warning and confirmation for dangerous server actions

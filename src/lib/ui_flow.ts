@@ -1,5 +1,5 @@
 import ora from "ora";
-import { select_server, show_main_menu, show_server_actions } from "./interaction";
+import { confirm_dangerous, select_server, show_main_menu, show_server_actions } from "./interaction";
 import { generate_server_list } from "./server_actions";
 import { Server } from "./types";
 import { sleep } from "./utils";
@@ -49,5 +49,28 @@ export async function server_actions(server: Server)
 		return;
 	}
 
-	console.log(action, 'not implemented');
+	switch (action)
+	{
+		case 'stop':
+
+			const confirm_stop = await confirm_dangerous(`Are you sure you want to stop ${server.name} without saving changes?`);
+			if(confirm_stop)
+			{
+				console.log(action, 'not implemented');
+			}
+			break;
+		case 'delete_completely':
+
+			const confirm_delete_completely = await confirm_dangerous(
+				`Are you sure you want to completely delete ${server.name} and all its snapshots?`, true);
+			if(confirm_delete_completely)
+			{
+				console.log(action, 'not implemented');
+			}
+			break;
+
+		default:
+			console.log(action, 'not implemented');
+			break;
+	}
 }
