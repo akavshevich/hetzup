@@ -5,26 +5,6 @@ import { Separator } from '@inquirer/prompts';
 import { Server, ServerList } from './types';
 import chalk from 'chalk';
 
-export function welcome(): void
-{
-	get_text_response(
-		'Welcome!\n' +
-		'Say Hello! \n'
-	)
-	.then(
-		function(response)
-		{
-			startup(response);
-		}
-	)
-	.catch(
-		function(error)
-		{
-			console.log('Error when trying to read initial command: ', error)
-		}
-	);
-}
-
 export async function get_text_response(prompt: string): Promise<string>
 {
 	try
@@ -35,7 +15,7 @@ export async function get_text_response(prompt: string): Promise<string>
 	}
 	catch(error)
 	{
-		console.log('Error when trying to get text response: ', error_to_string(error));
+		throw new Error('Error when trying to get text response: ' + error_to_string(error));
 		return '';
 	}
 }
@@ -54,20 +34,8 @@ export async function get_select_response(prompt: string, options: SelectInquiry
 	}
 	catch (error)
 	{
-		console.log('Error when trying to get a choice selection: ', error_to_string(error));
+		throw new Error('Error when trying to get a choice selection: ' + error_to_string(error));
 		return 0;
-	}
-}
-
-function startup(command: string): void{
-	switch (command)
-	{
-		case "hello":
-			console.log('Hello!');
-			break;
-		default:
-			console.log('unknown command');
-			break;
 	}
 }
 
@@ -145,7 +113,7 @@ export async function show_server_actions(server: Server): Promise<string | numb
 	}
 	else
 	{
-		console.log('No actions available as the server status is ' + server.status);
+		throw new Error('No actions available as the server status is ' + server.status);
 		return 'none';
 	}
 

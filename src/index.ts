@@ -1,4 +1,4 @@
-import { welcome, get_select_response, select_server, show_server_actions, show_snapshots } from './lib/interaction';
+import { get_select_response, select_server, show_server_actions, show_snapshots } from './lib/interaction';
 import { read_server_list } from './lib/configs';
 import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, delete_server, delete_snapshot, rebuild_server_from_image } from './lib/api_calls';
 

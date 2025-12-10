@@ -36,8 +36,7 @@ export async function main(navigate_to?: string)
 				process.exit();
 
 			default:
-				console.log('Unknown main menu option');
-				break;
+				throw new Error('Unknown main menu option');
 		}
 	}
 	catch(error)
@@ -156,9 +155,7 @@ export async function server_actions(server: Server)
 				return;
 
 			default:
-				console.log(action, 'not implemented');
-				main('servers');
-				return;
+				throw new Error(action + ' not implemented');
 		}
 	}
 	catch(error)
