@@ -1,3 +1,4 @@
+import readline from 'readline';
 import { AxiosError } from "axios";
 
 export function log_error(error: unknown)
@@ -75,4 +76,10 @@ export function sleep(ms: number)
 			);
 		}
 	);
+}
+
+export function clear_prompt()
+{
+	readline.moveCursor(process.stdout, 0, -1); // Move up 1 line
+	readline.clearLine(process.stdout, 0); // Clear the line
 }

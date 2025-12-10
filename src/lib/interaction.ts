@@ -1,5 +1,4 @@
-import readline from 'readline';
-import { error_to_string, format_date, round_to_precision } from './utils';
+import { clear_prompt, error_to_string, format_date, round_to_precision } from './utils';
 import select from '@inquirer/select';
 import input from '@inquirer/input';
 import { Separator } from '@inquirer/prompts';
@@ -31,8 +30,7 @@ export async function get_text_response(prompt: string): Promise<string>
 	try
 	{
 		const get_answer = await input({ message: prompt, theme: {prefix: ''} });
-		readline.moveCursor(process.stdout, 0, -1); // Move up 1 line
-		readline.clearLine(process.stdout, 0); // Clear the line
+		clear_prompt();
 		return get_answer;
 	}
 	catch(error)
@@ -51,8 +49,7 @@ export async function get_select_response(prompt: string, options: SelectInquiry
 	try
 	{
 		const answer = await select(params);
-		readline.moveCursor(process.stdout, 0, -1); // Move up 1 line
-		readline.clearLine(process.stdout, 0); // Clear the line
+		clear_prompt();
 		return answer;
 	}
 	catch (error)
@@ -185,7 +182,7 @@ export async function show_snapshots(server: Server): Promise< number | string |
 	snapshot_list.push(new Separator());
 	snapshot_list.push({name: 'Back', value: 0});
 
-	const selected_snapshot =  await get_select_response(`Snapshots for ${server.name}:`, snapshot_list);
+	const selected_snapshot = await get_select_response(`Snapshots for ${server.name}:`, snapshot_list);
 
 	if(selected_snapshot === 0)
 	{

@@ -4,7 +4,6 @@ import { read_server_list } from './configs';
 import { log_error, error_to_string, sleep, format_date } from "./utils";
 import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image } from './api_calls';
 import { NewServerDetails, Server, ServerList } from './types';
-import { snapshot } from 'node:test';
 
 export async function generate_server_list(): Promise< ServerList >
 {
@@ -137,7 +136,7 @@ export async function stop_server(server: Server, mode: 'save_stop' | 'stop' = '
 	}
 }
 
-export async function spin_up_from_snapshot(server: Server, type: string, latest: boolean = true, snapshot_id?: number): Promise< Server >
+export async function spin_up_from_snapshot(server: Server, type: string, latest: boolean = true, snapshot_id?: string | number): Promise< Server >
 {
 	if(server.status !== 'inactive')
 	{

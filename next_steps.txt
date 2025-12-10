@@ -1,5 +1,6 @@
-Implement UI for all server actions
-Add confirmation for revert, stop without saving, complete removal, snapshot deletion
+Implement function that returns snapshot details by ID for a server, show date in prompts and spinners
+Implement error UI
+Replace all console logs with error throws handled via error UI
 Implement config write for hetzner_config.json and servers.json
 Save server type, location, IPs used and other useful info on each server upon inactivating
 Implement listing of primary IPs
@@ -36,3 +37,6 @@ Implement revert to previous snapshot
 Added sleep function for timing burst requests apart
 Implement complete server removal (both server and snapshots)
 Implement warning and confirmation for dangerous server actions
+Implement UI for all server actions
+Add confirmation for revert, stop without saving, complete removal, snapshot deletion
+When stopping a server with no snapshots, clarify that and change confirmation to critical

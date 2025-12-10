@@ -310,7 +310,7 @@ type SingleServerAPIStructure =
 type SingleServerAPIResponse = APIResponse & SingleServerAPIStructure;
 
 
-export async function spin_up_server(image: number, name: string | number, type: string, location?: string): Promise< NewServerDetails >
+export async function spin_up_server(image: string | number, name: string | number, type: string, location?: string): Promise< NewServerDetails >
 {
 	const server_config = 
 	{
