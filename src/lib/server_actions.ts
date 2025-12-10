@@ -207,7 +207,10 @@ export async function delete_snapshot_visual(snapshot_id: number | string)
 
 export async function revert_to_snapshot(server: Server, snapshot_id: number | string): Promise<void>
 {
-	const spinner = ora({text: `Reverting ${server.name} to a previous snapshot...`, spinner: 'point', color: 'cyan'}).start();
+	const snapshot_details = get_snapshot_details(server, snapshot_id);
+	const spinner = ora(
+		{text: `Reverting ${server.name} to a snapshot from ${format_date(snapshot_details.date)}...`, spinner: 'point', color: 'cyan'}
+	).start();
 
 	try
 	{
@@ -271,4 +274,24 @@ export async function complete_server_removal(server: Server)
 		spinner.stop();
 		throw new Error(error_to_string(error));
 	}
+}
+
+export function get_snapshot_details(server: Server, snapshot_id: number | string): {id: number | string, date: string, disk: number}
+{
+	let snapshot_details;
+	for (let index = 0; index < server.snapshots.length; index++)
+	{
+		const snapshot = server.snapshots[index];
+		if(snapshot.id === snapshot_id)
+		{
+			snapshot_details = snapshot;
+		}
+	}
+
+	if(!snapshot_details)
+	{
+		throw new Error(`Server ${server.name} has no snapshot ${snapshot_id}`);
+	}
+
+	return {id: snapshot_details.id, date: snapshot_details.date, disk: snapshot_details.disk};
 }

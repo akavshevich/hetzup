@@ -1,8 +1,8 @@
 import ora from "ora";
 import { confirm_dangerous, select_server, show_main_menu, show_server_actions, show_snapshots } from "./interaction";
-import { complete_server_removal, delete_snapshot_visual, generate_server_list, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server } from "./server_actions";
+import { complete_server_removal, delete_snapshot_visual, generate_server_list, get_snapshot_details, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server } from "./server_actions";
 import { Server } from "./types";
-import { sleep } from "./utils";
+import { format_date, sleep } from "./utils";
 
 export async function main(navigate_to?: string)
 {
@@ -100,13 +100,16 @@ export async function server_actions(server: Server)
 				return;
 			}
 
+			const snapshot_details = get_snapshot_details(server, snapshot_id);
+
 			if(action === 'spin_up_select')
 			{
 				await spin_up_from_snapshot(server, 'cpx11', false, snapshot_id);
 			}
 			else if(action === 'revert')
 			{
-				const confirm_revert = await confirm_dangerous(`Are you sure you want to revert ${server.name} to snapshot ${snapshot_id}?`);
+				const confirm_revert = await confirm_dangerous(
+					`Are you sure you want to revert ${server.name} to snapshot from ${format_date(snapshot_details.date)}?`);
 				if(!confirm_revert)
 				{
 					server_actions(server);
@@ -117,7 +120,8 @@ export async function server_actions(server: Server)
 			}
 			else if(action === 'delete_snapshots')
 			{
-				const confirm_delete_snapshot = await confirm_dangerous(`Are you sure you want to delete ${snapshot_id} for ${server.name}?`);
+				const confirm_delete_snapshot = await confirm_dangerous(
+					`Are you sure you want to delete ${format_date(snapshot_details.date)} snapshot for ${server.name}?`);
 				if(!confirm_delete_snapshot)
 				{
 					server_actions(server);
