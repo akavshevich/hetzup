@@ -1,6 +1,8 @@
+Handle config read errors
 Implement initial configuration
-Implement verification for config file being valid
 Implement config repairs
+Implement config UI
+Show root password upon server creation if no ssh keys configured
 Save server type, location, IPs used and other useful info on each server upon inactivating
 Implement listing of primary IPs
 When spinning up from snapshot, use saved server info if available
@@ -43,3 +45,4 @@ Implement function that returns snapshot details by ID for a server, show date i
 Implement error UI
 Replace all console logs with error throws handled via error UI
 Implement config write for hetzner_config.json and servers.json
+Implement config file validation

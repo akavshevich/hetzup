@@ -11,6 +11,11 @@ type APIFields = {[index: string]: any};
 
 async function call_hetzner_api(path: string, method: APIMethod, fields: APIFields = {}, page: false | number = false): Promise<APIResponse>
 {
+	if(!hetzner_config || hetzner_config.api_token === '')
+	{
+		throw new Error('API key not configured');
+	}
+
 	let request = 
 	{
 		method: method,
@@ -198,8 +203,13 @@ export async function get_available_server_types(): Promise<ServerType[]>
 			}[]
 		};
 		
-		const server_types = [];
+		let preferred_location = 'fsn1';
+		if(hetzner_config && hetzner_config.preferred_location !== '')
+		{
+			preferred_location = hetzner_config.preferred_location;
+		}
 
+		const server_types = [];
 		for (const server_type of response.server_types)
 		{
 			let hourly_price = 0;
@@ -207,7 +217,7 @@ export async function get_available_server_types(): Promise<ServerType[]>
 
 			for (const location of server_type.prices)
 			{
-				if(location.location === hetzner_config.preferred_location)
+				if(location.location === preferred_location)
 				{
 					hourly_price = location.price_hourly.gross;
 					monthly_price = location.price_monthly.gross;
@@ -312,13 +322,25 @@ type SingleServerAPIResponse = APIResponse & SingleServerAPIStructure;
 
 export async function spin_up_server(image: string | number, name: string | number, type: string, location?: string): Promise< NewServerDetails >
 {
+	let preferred_location = 'fsn1';
+	if(hetzner_config && hetzner_config.preferred_location !== '')
+	{
+		preferred_location = hetzner_config.preferred_location;
+	}
+
+	let ssh_keys: string[] = [];
+	if(hetzner_config && hetzner_config.ssh_keys.length > 0)
+	{
+		ssh_keys = hetzner_config.ssh_keys;
+	}
+
 	const server_config = 
 	{
 		image: image,
 		name: name,
-		location: hetzner_config.preferred_location,
+		location: preferred_location,
 		server_type: type,
-		ssh_keys: hetzner_config.ssh_keys
+		ssh_keys: ssh_keys
 	};
 
 	if(location)

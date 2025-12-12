@@ -1,5 +1,5 @@
 import { get_select_response, select_server, show_server_actions, show_snapshots } from './lib/interaction';
-import { read_server_list, update_hetzner_config, update_server_config } from './lib/configs';
+import { read_hetzner_config, read_server_config, update_hetzner_config, update_server_config } from './lib/configs';
 import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, delete_server, delete_snapshot, rebuild_server_from_image } from './lib/api_calls';
 
 import select, { Separator } from '@inquirer/select';
@@ -11,7 +11,9 @@ import { main } from './lib/ui_flow';
 console.log('');
 // main();
 
-update_server_config({servers: [{name: 'abc'}]});
+read_hetzner_config();
+
+// update_server_config({servers: [{name: 'abc'}]});
 // update_hetzner_config({preferred_location: 'new'});
 
 // async function test()

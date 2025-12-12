@@ -5,6 +5,7 @@
   },
   "dependencies": {
     "@inquirer/select": "^5.0.1",
+    "arktype": "^2.1.28",
     "axios": "^1.11.0",
     "chalk": "^5.6.2",
     "inquirer": "^13.0.1",

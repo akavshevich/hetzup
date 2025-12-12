@@ -1,6 +1,6 @@
 import ora from 'ora';
 
-import { read_server_list } from './configs';
+import { read_server_config } from './configs';
 import { log_error, error_to_string, sleep, format_date } from "./utils";
 import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image } from './api_calls';
 import { NewServerDetails, Server, ServerList } from './types';
