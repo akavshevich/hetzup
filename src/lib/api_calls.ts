@@ -1,9 +1,13 @@
-import { read_hetzner_config } from "./configs";
 import axios from 'axios';
+import { ArkErrors, type } from "arktype";
+
+import { read_hetzner_config } from "./configs";
 import { log_error, error_to_string } from "./utils";
 import { NewServerDetails, Server } from "./types";
 
-type APIResponse = {successful: true, response: Object} | {successful: false, error: string};
+const APIResponse = type.or({"successful": "true", "response": "object"}, {"successful": "false", "error": "string"});
+type APIResponse = typeof APIResponse.infer;
+
 type APIMethod = 'GET' | 'POST' | 'DELETE';
 type APIFields = {[index: string]: any};
 
@@ -13,7 +17,7 @@ async function call_hetzner_api(path: string, method: APIMethod, fields: APIFiel
 
 	if(!hetzner_config || hetzner_config.api_token === '')
 	{
-		throw new Error('API key not configured. Restart the program to fix.');
+		throw new Error('API key not found. Restart the program to reconfigure.');
 	}
 
 	let request = 
@@ -93,46 +97,53 @@ async function call_hetzner_api(path: string, method: APIMethod, fields: APIFiel
 
 type RunningServer = {id: number, name: string, cores: number, disk: number, memory: number};
 
-type ServerAPIStructure = 
-{
-	id: number, 
-	name: string,
-	status: 'running' | 'initializing' | 'starting' | 'stopping' | 'off' | 'deleting' | 'migrating' | 'rebuilding' | 'unknown',
-	server_type:
+const ServerAPIStructure = type(
 	{
-		cores: number,
-		disk: number,
-		memory: number
-	},
-	public_net:
-	{
-		ipv4:
+		id: "number",
+		name: "string",
+		status: "'running' | 'initializing' | 'starting' | 'stopping' | 'off' | 'deleting' | 'migrating' | 'rebuilding' | 'unknown'",
+		server_type:
 		{
-			ip: string
+			cores: "number",
+			disk: "number",
+			memory: "number"
 		},
-		ipv6:
+		public_net:
 		{
-			ip: string
+			ipv4:
+			{
+				ip: "string"
+			},
+			ipv6:
+			{
+				ip: "string"
+			}
 		}
 	}
-};
+);
+type ServerAPIStructure = typeof ServerAPIStructure.infer;
 
-type ServersAPIStructure = 
-{
-	response:
+const ServersAPIStructure = type(
 	{
-		servers: 
-		[
-			ServerAPIStructure
-		]
+		response:
+		{
+			servers: type(ServerAPIStructure, "[]")
+		}
 	}
-};
+);
+type ServersAPIStructure = typeof ServersAPIStructure.infer;
 
-type ServersAPIResponse = APIResponse & ServersAPIStructure;
+const ServersAPIResponse = type.and(APIResponse, ServersAPIStructure);
+type ServersAPIResponse = typeof ServersAPIResponse.infer;
 
 export async function get_running_servers(): Promise<RunningServer[]>
 {
-	const call = await call_hetzner_api('servers', 'GET') as ServersAPIResponse;
+	const call = ServersAPIResponse(await call_hetzner_api('servers', 'GET'));
+
+	if(call instanceof type.errors)
+	{
+		throw new Error('Unexpected API response for server list: ' + call.summary);
+	}
 	
 	if(call.successful)
 	{
@@ -154,15 +165,22 @@ export async function get_running_servers(): Promise<RunningServer[]>
 	}
 }
 
+const SnapshotsAPIStructure = type({images: type({id: "number", created: "string", created_from: {name: "string"}, image_size: "number"}, "[]")});
+type SnapshotsAPIStructure = typeof SnapshotsAPIStructure.infer;
+
 export async function get_snapshots(): Promise<{id: number, name: string, date: string, disk: number}[]>
 {
 	const call = await call_hetzner_api('images', 'GET', {type: 'snapshot'});
 
 	if(call.successful)
 	{
-		const response = call.response as {images: {id: number, created: string, created_from: {name: string}, image_size: number}[]};
-		const snapshots = [];
+		const response = SnapshotsAPIStructure(call.response);
+		if(response instanceof type.errors)
+		{
+			throw new Error('Unexpected API response for snapshot list: ' + response.summary);
+		}
 
+		const snapshots = [];
 		for (const image of response.images)
 		{
 			snapshots.push({id: image.id, name: image.created_from.name, date: image.created, disk: image.image_size})
@@ -186,22 +204,31 @@ type ServerType =
 	monthly_price: number
 }
 
+const ServerTypesAPIStructure = type(
+	{
+		server_types: 
+		type({
+			name: "string", 
+			cores: "number", 
+			memory: "number",
+			disk: "number",
+			prices: type({location: "string", price_hourly: {gross: "number"}, price_monthly: {gross: "number"}}, "[]")
+		}, "[]")
+	}
+);
+type ServerTypesAPIStructure = typeof ServerTypesAPIStructure.infer;
+
 export async function get_available_server_types(): Promise<ServerType[]>
 {
 	const call = await call_hetzner_api('server_types', 'GET');
 
 	if(call.successful)
 	{
-		const response = call.response as {
-			server_types: 
-			{
-					name: string, 
-					cores: number, 
-					memory: number,
-					disk: number,
-					prices: {location: string, price_hourly: {gross: number}, price_monthly: {gross: number}}[]
-			}[]
-		};
+		const response = ServerTypesAPIStructure(call.response);
+		if(response instanceof type.errors)
+		{
+			throw new Error('Unexpected API response for server type list: ' + response.summary);
+		}
 
 		const hetzner_config = read_hetzner_config();
 
@@ -251,21 +278,27 @@ export async function get_available_server_types(): Promise<ServerType[]>
 	}
 }
 
-type SnapshotDetails = 
-{
-	id: number,
-	status: 'available' | 'creating' | 'unavailable'
-};
-
-type SnapshotDetailsAPIStructure = 
-{
-	response: 
+const SnapshotDetails = type(
 	{
-		image: SnapshotDetails
+		id: "number",
+		status: "'available' | 'creating' | 'unavailable'"
 	}
-};
+);
 
-type SnapshotDetailsAPIResponse = APIResponse & SnapshotDetailsAPIStructure;
+type SnapshotDetails = typeof SnapshotDetails.infer;
+
+const SnapshotDetailsAPIStructure = type(
+	{
+		response: 
+		{
+			image: SnapshotDetails
+		}
+	}
+);
+type SnapshotDetailsAPIStructure = typeof SnapshotDetailsAPIStructure.infer;
+
+const SnapshotDetailsAPIResponse = type.and(APIResponse, SnapshotDetailsAPIStructure);
+type SnapshotDetailsAPIResponse = typeof SnapshotDetailsAPIResponse.infer;
 
 export async function initialize_snapshot_save(server: Server): Promise< number >
 {
@@ -274,11 +307,16 @@ export async function initialize_snapshot_save(server: Server): Promise< number 
 		throw new Error('Unable to create a snapshot: Server is not running');
 	}
 
-	const snapshot_save_init_response = await call_hetzner_api(
+	const snapshot_save_init_response = SnapshotDetailsAPIResponse(await call_hetzner_api(
 		`servers/${server.id}/actions/create_image`, 
 		'POST', {description: server.name}
-	) as SnapshotDetailsAPIResponse;
+	));
 	
+	if(snapshot_save_init_response instanceof type.errors)
+	{
+		throw new Error('Unexpected API response when creating a snapshot: ' + snapshot_save_init_response.summary);
+	}
+
 	if(snapshot_save_init_response.successful)
 	{
 		return snapshot_save_init_response.response.image.id;
@@ -311,18 +349,20 @@ export async function delete_server(server: Server)
 	throw new Error('Unable to stop server: ' + delete_call.error);
 }
 
-type SingleServerAPIStructure = 
-{
-	response:
+const SingleServerAPIStructure = type(
 	{
-		server: ServerAPIStructure
+		response:
+		{
+			server: ServerAPIStructure
+		}
 	}
-};
+);
+type SingleServerAPIStructure = typeof SingleServerAPIStructure.infer;
 
-type SingleServerAPIResponse = APIResponse & SingleServerAPIStructure;
+const SingleServerAPIResponse = type.and(APIResponse, SingleServerAPIStructure);
+type SingleServerAPIResponse = typeof SingleServerAPIResponse.infer;
 
-
-export async function spin_up_server(image: string | number, name: string | number, type: string, location?: string): Promise< NewServerDetails >
+export async function spin_up_server(image: string | number, name: string | number, server_type: string, location?: string): Promise< NewServerDetails >
 {
 	const hetzner_config = read_hetzner_config();
 
@@ -343,7 +383,7 @@ export async function spin_up_server(image: string | number, name: string | numb
 		image: image,
 		name: name,
 		location: preferred_location,
-		server_type: type,
+		server_type: server_type,
 		ssh_keys: ssh_keys
 	};
 
@@ -352,11 +392,17 @@ export async function spin_up_server(image: string | number, name: string | numb
 		server_config.location = location;
 	}
 
-	const call = await call_hetzner_api('servers', 'POST', server_config) as SingleServerAPIResponse;
+	const call = await call_hetzner_api('servers', 'POST', server_config);
 
 	if(call.successful)
 	{
-		const new_server_init = call.response.server;
+		const response = SingleServerAPIResponse(call);
+		if(response instanceof type.errors)
+		{
+			throw new Error('Unexpected API response when spinning up a server: ' + response.summary);
+		}
+
+		const new_server_init = response.response.server;
 		return {
 			id: new_server_init.id, 
 			ipv4: new_server_init.public_net.ipv4.ip, 
@@ -370,11 +416,17 @@ export async function spin_up_server(image: string | number, name: string | numb
 
 export async function get_server(server_id: number): Promise<Server>
 {
-	const get_server_details = await call_hetzner_api(`servers/${server_id}`, 'GET') as SingleServerAPIResponse;
+	const get_server_details = await call_hetzner_api(`servers/${server_id}`, 'GET');
 
 	if(get_server_details.successful)
 	{
-		const server = get_server_details.response.server;
+		const server_details = SingleServerAPIResponse(get_server_details);
+		if(server_details instanceof type.errors)
+		{
+			throw new Error('Unexpected API response when getting server details: ' + server_details.summary);
+		}
+
+		const server = server_details.response.server;
 
 		return {
 			id: server.id, 

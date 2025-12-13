@@ -9,9 +9,9 @@ import { complete_server_removal, delete_snapshot_visual, generate_server_list, 
 import { main } from './lib/ui_flow';
 
 console.log('');
-// main();
+main();
 
-read_server_config();
+// read_server_config();
 
 // update_server_config({servers: [{name: 'abc'}]});
 // update_hetzner_config({preferred_location: 'new'});

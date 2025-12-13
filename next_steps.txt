@@ -1,3 +1,5 @@
+Implement getting available locations
+Implement getting ssh keys
 Implement initial configuration
 Implement config UI
 Show root password upon server creation if no ssh keys configured

@@ -16,7 +16,6 @@ export async function get_text_response(prompt: string): Promise<string>
 	catch(error)
 	{
 		throw new Error('Error when trying to get text response: ' + error_to_string(error));
-		return '';
 	}
 }
 
@@ -211,3 +210,8 @@ export async function show_error(error: any)
 
 	return;
 }
+
+// export async function configure()
+// {
+
+// }
