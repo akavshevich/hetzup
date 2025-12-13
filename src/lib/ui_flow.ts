@@ -6,6 +6,8 @@ import { format_date, sleep } from "./utils";
 
 export async function main(navigate_to?: string)
 {
+	const spinner = ora({text: '', spinner: 'boxBounce'});
+
 	try
 	{
 		let main_menu_response: string | number | undefined = navigate_to;
@@ -17,7 +19,8 @@ export async function main(navigate_to?: string)
 		switch (main_menu_response)
 		{
 			case 'servers':
-				const spinner = ora({text: 'Loading servers...', spinner: 'boxBounce'}).start();
+				spinner.text = 'Loading servers...';
+				spinner.start();
 				const server_list = await generate_server_list();
 				spinner.stop();
 
@@ -41,6 +44,7 @@ export async function main(navigate_to?: string)
 	}
 	catch(error)
 	{
+		spinner.stop();
 		await show_error(error);
 		main();
 	}

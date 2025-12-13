@@ -1,6 +1,4 @@
-Handle config read errors
 Implement initial configuration
-Implement config repairs
 Implement config UI
 Show root password upon server creation if no ssh keys configured
 Save server type, location, IPs used and other useful info on each server upon inactivating
@@ -46,3 +44,4 @@ Implement error UI
 Replace all console logs with error throws handled via error UI
 Implement config write for hetzner_config.json and servers.json
 Implement config file validation
+Implement config repairs

@@ -11,7 +11,7 @@ import { main } from './lib/ui_flow';
 console.log('');
 // main();
 
-read_hetzner_config();
+read_server_config();
 
 // update_server_config({servers: [{name: 'abc'}]});
 // update_hetzner_config({preferred_location: 'new'});

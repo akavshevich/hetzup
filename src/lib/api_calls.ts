@@ -3,17 +3,17 @@ import axios from 'axios';
 import { log_error, error_to_string } from "./utils";
 import { NewServerDetails, Server } from "./types";
 
-const hetzner_config = read_hetzner_config();
-
 type APIResponse = {successful: true, response: Object} | {successful: false, error: string};
 type APIMethod = 'GET' | 'POST' | 'DELETE';
 type APIFields = {[index: string]: any};
 
 async function call_hetzner_api(path: string, method: APIMethod, fields: APIFields = {}, page: false | number = false): Promise<APIResponse>
 {
+	const hetzner_config = read_hetzner_config();
+
 	if(!hetzner_config || hetzner_config.api_token === '')
 	{
-		throw new Error('API key not configured');
+		throw new Error('API key not configured. Restart the program to fix.');
 	}
 
 	let request = 
@@ -202,9 +202,11 @@ export async function get_available_server_types(): Promise<ServerType[]>
 					prices: {location: string, price_hourly: {gross: number}, price_monthly: {gross: number}}[]
 			}[]
 		};
-		
+
+		const hetzner_config = read_hetzner_config();
+
 		let preferred_location = 'fsn1';
-		if(hetzner_config && hetzner_config.preferred_location !== '')
+		if(hetzner_config && hetzner_config.preferred_location && hetzner_config.preferred_location !== '')
 		{
 			preferred_location = hetzner_config.preferred_location;
 		}
@@ -322,14 +324,16 @@ type SingleServerAPIResponse = APIResponse & SingleServerAPIStructure;
 
 export async function spin_up_server(image: string | number, name: string | number, type: string, location?: string): Promise< NewServerDetails >
 {
+	const hetzner_config = read_hetzner_config();
+
 	let preferred_location = 'fsn1';
-	if(hetzner_config && hetzner_config.preferred_location !== '')
+	if(hetzner_config && hetzner_config.preferred_location && hetzner_config.preferred_location !== '')
 	{
 		preferred_location = hetzner_config.preferred_location;
 	}
 
 	let ssh_keys: string[] = [];
-	if(hetzner_config && hetzner_config.ssh_keys.length > 0)
+	if(hetzner_config && hetzner_config.ssh_keys && hetzner_config.ssh_keys.length > 0)
 	{
 		ssh_keys = hetzner_config.ssh_keys;
 	}
