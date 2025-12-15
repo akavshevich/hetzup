@@ -1,6 +1,6 @@
 import { get_select_response, select_server, show_server_actions, show_snapshots } from './lib/interaction';
 import { read_hetzner_config, read_server_config, update_hetzner_config, update_server_config } from './lib/configs';
-import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, delete_server, delete_snapshot, rebuild_server_from_image, get_locations } from './lib/api_calls';
+import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, delete_server, delete_snapshot, rebuild_server_from_image, get_locations, get_ssh_keys } from './lib/api_calls';
 
 import select, { Separator } from '@inquirer/select';
 import chalk from 'chalk';
@@ -73,8 +73,9 @@ async function test()
 
 		// await complete_server_removal(selected_server);
 
-		const locations = await get_locations();
-		console.log(locations);
+		// const locations = await get_locations();
+		const ssh_keys = await get_ssh_keys();
+		console.log(ssh_keys);
 	}
 	catch (error)
 	{

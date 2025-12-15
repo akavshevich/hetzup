@@ -493,12 +493,15 @@ export async function rebuild_server_from_image(server: Server, snapshot_id: num
 	throw new Error('Unable to revert to snapshot: ' + rebuild_call.error);
 }
 
-const LocationsAPIStructure = type({
-	locations: type({
+const LocationsAPIStructure = type(
+{
+	locations: type(
+	{
 		name: "string",
 		country: "string",
 		city: "string"
-	}, "[]")
+	}, 
+	"[]")
 });
 type LocationsAPIStructure = typeof LocationsAPIStructure.infer;
 
@@ -525,5 +528,41 @@ export async function get_locations(): Promise<{ location: string; description: 
 	else
 	{
 		throw new Error('Failed to call API to get a list of locations: ' + call.error);
+	}
+}
+
+const SSHKeysAPIStructure = type(
+{
+	ssh_keys: type(
+	{
+		name: "string"
+	}, 
+	"[]")
+});
+type SSHKeysAPIStructure = typeof SSHKeysAPIStructure.infer;
+
+export async function get_ssh_keys(): Promise<string[]>
+{
+	const call = await call_hetzner_api('ssh_keys', 'GET');
+
+	if(call.successful)
+	{
+		const response = SSHKeysAPIStructure(call.response);
+		if(response instanceof type.errors)
+		{
+			throw new Error('Unexpected API response for a list of SSH keys: ' + response.summary);
+		}
+
+		const ssh_keys = [];
+		for(const key of response.ssh_keys)
+		{
+			ssh_keys.push(key.name);
+		}
+
+		return ssh_keys;
+	}
+	else
+	{
+		throw new Error('Failed to call API to get SSH keys: ' + call.error);
 	}
 }
