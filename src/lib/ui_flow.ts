@@ -1,5 +1,5 @@
 import ora from "ora";
-import { confirm_dangerous, select_server, show_error, show_main_menu, show_server_actions, show_snapshots } from "./interaction";
+import { configure, configure_api_key, confirm_dangerous, select_server, show_error, show_main_menu, show_server_actions, show_snapshots } from "./interaction";
 import { complete_server_removal, delete_snapshot_visual, generate_server_list, get_snapshot_details, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server } from "./server_actions";
 import { Server } from "./types";
 import { format_date, sleep } from "./utils";
@@ -8,10 +8,11 @@ import { read_hetzner_config } from "./configs";
 export async function main(navigate_to?: string)
 {
 	const hetzner_config = read_hetzner_config();
-
 	if(!hetzner_config || hetzner_config.api_token === '')
 	{
 		// Start configuration flow
+		await configure();
+		main();
 		return;
 	}
 

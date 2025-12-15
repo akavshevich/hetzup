@@ -11,7 +11,7 @@ type APIResponse = typeof APIResponse.infer;
 type APIMethod = 'GET' | 'POST' | 'DELETE';
 type APIFields = {[index: string]: any};
 
-async function call_hetzner_api(path: string, method: APIMethod, fields: APIFields = {}, page: false | number = false): Promise<APIResponse>
+export async function call_hetzner_api(path: string, method: APIMethod, fields: APIFields = {}, page: false | number = false): Promise<APIResponse>
 {
 	const hetzner_config = read_hetzner_config();
 
@@ -501,7 +501,7 @@ const LocationsAPIStructure = type(
 		country: "string",
 		city: "string"
 	}, 
-	"[]")
+	"[]").atLeastLength(1)
 });
 type LocationsAPIStructure = typeof LocationsAPIStructure.infer;
 

@@ -4,6 +4,8 @@ import input from '@inquirer/input';
 import { Separator } from '@inquirer/prompts';
 import { Server, ServerList } from './types';
 import chalk from 'chalk';
+import { read_hetzner_config, update_hetzner_config } from './configs';
+import { call_hetzner_api, get_running_servers } from './api_calls';
 
 export async function get_text_response(prompt: string): Promise<string>
 {
@@ -113,7 +115,6 @@ export async function show_server_actions(server: Server): Promise<string | numb
 	else
 	{
 		throw new Error('No actions available as the server status is ' + server.status);
-		return 'none';
 	}
 
 	server_actions_list.push({name: 'Select snapshot(s) to delete', value: 'delete_snapshots'});
@@ -211,7 +212,60 @@ export async function show_error(error: any)
 	return;
 }
 
-// export async function configure()
-// {
+export async function configure_api_key()
+{
+	let api_key = await get_text_response('Enter your Hetzner Cloud API key to begin: ');
+	api_key = api_key.trim();
 
-// }
+	try
+	{
+		update_hetzner_config({api_token: api_key});
+	}
+	catch(error)
+	{
+		throw new Error('Failed to save API key: ' + error_to_string(error));
+	}
+}
+
+export async function configure()
+{
+	const hetzner_config = read_hetzner_config();
+	
+	if(!hetzner_config || !hetzner_config.api_token || hetzner_config.api_token === '')
+	{
+		await configure_api_key();
+		const call_attempt = await call_hetzner_api('servers', 'GET');
+
+		if(call_attempt.successful)
+		{
+			configure();
+			return;
+		}
+		else if (call_attempt.error.includes('401'))
+		{
+			await show_error('Incorrect API key. Go back to try again.');
+			
+			try
+			{
+				update_hetzner_config({api_token: ''});
+			}
+			catch(error)
+			{
+				throw new Error('Failed to reset API key: ' + error_to_string(error));
+			}
+		}
+		else
+		{
+			throw new Error('Hetzner API is unreachable at the moment.');
+		}
+	}
+
+	const available_configs: SelectInquiryOptions =
+	[
+		{name: 'Change Hetzner Cloud API key', value: 'api_key'},
+		{name: 'Preferred location: [fsn1]', value: 'pref_location'},
+		{name: 'Default SSH keys: [a, b, c]', value: 'ssh_keys'},
+		new Separator(),
+		{name: 'Back', value: 0}
+	];
+}
