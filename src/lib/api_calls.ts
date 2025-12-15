@@ -492,3 +492,38 @@ export async function rebuild_server_from_image(server: Server, snapshot_id: num
 
 	throw new Error('Unable to revert to snapshot: ' + rebuild_call.error);
 }
+
+const LocationsAPIStructure = type({
+	locations: type({
+		name: "string",
+		country: "string",
+		city: "string"
+	}, "[]")
+});
+type LocationsAPIStructure = typeof LocationsAPIStructure.infer;
+
+export async function get_locations(): Promise<{ location: string; description: string; }[]>
+{
+	const call = await call_hetzner_api('locations', 'GET');
+
+	if(call.successful)
+	{
+		const response = LocationsAPIStructure(call.response);
+		if(response instanceof type.errors)
+		{
+			throw new Error('Unexpected API response for a list of locations: ' + response.summary);
+		}
+
+		const locations = [];
+		for (const location of response.locations)
+		{
+			locations.push({location: location.name, description: `${location.city} (${location.country})`});
+		}
+
+		return locations;
+	}
+	else
+	{
+		throw new Error('Failed to call API to get a list of locations: ' + call.error);
+	}
+}

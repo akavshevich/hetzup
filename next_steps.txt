@@ -1,4 +1,3 @@
-Implement getting available locations
 Implement getting ssh keys
 Implement initial configuration
 Implement config UI
@@ -47,3 +46,4 @@ Replace all console logs with error throws handled via error UI
 Implement config write for hetzner_config.json and servers.json
 Implement config file validation
 Implement config repairs
+Implement getting available locations
