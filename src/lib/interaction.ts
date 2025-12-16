@@ -1,11 +1,12 @@
 import { clear_prompt, error_to_string, format_date, round_to_precision } from './utils';
 import select from '@inquirer/select';
 import input from '@inquirer/input';
-import { Separator } from '@inquirer/prompts';
+import { checkbox, Separator } from '@inquirer/prompts';
 import { Server, ServerList } from './types';
 import chalk from 'chalk';
 import { read_hetzner_config, update_hetzner_config } from './configs';
-import { call_hetzner_api, get_running_servers } from './api_calls';
+import { call_hetzner_api, get_locations, get_running_servers, get_ssh_keys } from './api_calls';
+import ora from 'ora';
 
 export async function get_text_response(prompt: string): Promise<string>
 {
@@ -36,7 +37,30 @@ export async function get_select_response(prompt: string, options: SelectInquiry
 	catch (error)
 	{
 		throw new Error('Error when trying to get a choice selection: ' + error_to_string(error));
-		return 0;
+	}
+}
+
+export async function get_multi_choice_response(prompt: string, options: SelectInquiryOptions): Promise<(string | number)[]>
+{
+	const params = 
+	{
+		message: prompt + ' (Use SPACE to select, ENTER to confirm choices.)', 
+		choices: options, 
+		loop: false, 
+		pageSize: 9, 
+		theme: {prefix: ''}, 
+		shortcuts: {all: null, invert: null}
+	};
+
+	try
+	{
+		const answers = await checkbox(params);
+		clear_prompt();
+		return answers;
+	}
+	catch (error)
+	{
+		throw new Error('Error when trying to get a multi choice response: ' + error_to_string(error));
 	}
 }
 
@@ -214,8 +238,18 @@ export async function show_error(error: any)
 
 export async function configure_api_key()
 {
-	let api_key = await get_text_response('Enter your Hetzner Cloud API key to begin: ');
+	let api_key = await get_text_response('Enter your Hetzner Cloud API key: ');
 	api_key = api_key.trim();
+
+	if(api_key.length === 0)
+	{
+		return;
+	}
+
+	if(api_key.length !== 64)
+	{
+		throw new Error(`API key must be 64 characters long, this one is ${api_key.length}`);
+	}
 
 	try
 	{
@@ -227,45 +261,116 @@ export async function configure_api_key()
 	}
 }
 
-export async function configure()
+export async function configure_preferred_location()
 {
-	const hetzner_config = read_hetzner_config();
-	
-	if(!hetzner_config || !hetzner_config.api_token || hetzner_config.api_token === '')
-	{
-		await configure_api_key();
-		const call_attempt = await call_hetzner_api('servers', 'GET');
+	const spinner = ora({text: 'Loading available server locations...', spinner: 'boxBounce', color: 'cyan'}).start();
 
-		if(call_attempt.successful)
+	try
+	{
+		const locations = await get_locations();
+		spinner.stop();
+		
+		const location_options: SelectInquiryOptions = [];
+		for(const location of locations)
 		{
-			configure();
+			location_options.push({name: `${location.description} (${location.location})`, value: location.location});
+		}
+		location_options.push(new Separator());
+		location_options.push({name: 'Back', value: 0});
+
+		const selected_location = await get_select_response('Select preferred server location', location_options);
+
+		if(typeof selected_location !== 'string')
+		{
 			return;
 		}
-		else if (call_attempt.error.includes('401'))
+
+		update_hetzner_config({preferred_location: selected_location});
+	}
+	catch(error)
+	{
+		spinner.stop();
+		throw new Error(error_to_string(error));
+	}
+}
+
+type MultiChoiceInquiryOptions = SelectInquiryOptions & {checked?: boolean};
+
+export async function configure_default_ssh_keys(current_keys: string[])
+{
+	const spinner = ora({text: 'Loading your SSH keys ...', spinner: 'boxBounce', color: 'cyan'}).start();
+
+	try
+	{
+		const ssh_keys = await get_ssh_keys();
+		spinner.stop();
+		
+		const ssh_key_options: MultiChoiceInquiryOptions = [];
+		for(const ssh_key of ssh_keys)
 		{
-			await show_error('Incorrect API key. Go back to try again.');
-			
-			try
+			const ssh_key_option: {name: string, value: string | number, checked?: boolean} = {name: ssh_key, value: ssh_key};
+			if(current_keys.includes(ssh_key))
 			{
-				update_hetzner_config({api_token: ''});
+				ssh_key_option.checked = true;
 			}
-			catch(error)
-			{
-				throw new Error('Failed to reset API key: ' + error_to_string(error));
-			}
+
+			ssh_key_options.push(ssh_key_option);
 		}
-		else
+		ssh_key_options.push(new Separator());
+		ssh_key_options.push({name: 'None', value: 0});
+
+		const selected_keys = await get_multi_choice_response('Select default SSH keys', ssh_key_options);
+		let key_names: string[] = [];
+		for(const ssh_key of selected_keys)
 		{
-			throw new Error('Hetzner API is unreachable at the moment.');
+			if(typeof ssh_key !== 'string')
+			{
+				key_names = [];
+				break;
+			}
+			key_names.push(ssh_key);
 		}
+
+		update_hetzner_config({ssh_keys: key_names});
+	}
+	catch(error)
+	{
+		spinner.stop();
+		throw new Error(error_to_string(error));
+	}
+}
+
+export async function show_config(): Promise<string | number | false>
+{
+	const hetzner_config = read_hetzner_config();
+
+	let pref_location = 'fsn1';
+	let ssh_keys: string[] = [];
+
+	if(hetzner_config && hetzner_config.preferred_location)
+	{
+		pref_location = hetzner_config.preferred_location;
+	}
+
+	if(hetzner_config && hetzner_config.ssh_keys)
+	{
+		ssh_keys = hetzner_config.ssh_keys;
 	}
 
 	const available_configs: SelectInquiryOptions =
 	[
 		{name: 'Change Hetzner Cloud API key', value: 'api_key'},
-		{name: 'Preferred location: [fsn1]', value: 'pref_location'},
-		{name: 'Default SSH keys: [a, b, c]', value: 'ssh_keys'},
+		{name: `Preferred location: [${chalk.green(pref_location)}]`, value: 'pref_location'},
+		{name: `Default SSH keys: [${chalk.green(ssh_keys.join(', '))}]`, value: 'ssh_keys'},
 		new Separator(),
 		{name: 'Back', value: 0}
 	];
+
+	const chosen_config = await get_select_response('Config', available_configs);
+	if(!chosen_config)
+	{
+		return false;
+	}
+
+	return chosen_config;
 }

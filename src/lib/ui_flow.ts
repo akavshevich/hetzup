@@ -1,18 +1,18 @@
 import ora from "ora";
-import { configure, configure_api_key, confirm_dangerous, select_server, show_error, show_main_menu, show_server_actions, show_snapshots } from "./interaction";
+import { configure_api_key, configure_default_ssh_keys, configure_preferred_location, confirm_dangerous, select_server, show_config, show_error, show_main_menu, show_server_actions, show_snapshots } from "./interaction";
 import { complete_server_removal, delete_snapshot_visual, generate_server_list, get_snapshot_details, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server } from "./server_actions";
 import { Server } from "./types";
-import { format_date, sleep } from "./utils";
-import { read_hetzner_config } from "./configs";
+import { error_to_string, format_date, sleep } from "./utils";
+import { read_hetzner_config, update_hetzner_config } from "./configs";
+import { call_hetzner_api } from "./api_calls";
+import chalk from "chalk";
 
 export async function main(navigate_to?: string)
 {
 	const hetzner_config = read_hetzner_config();
 	if(!hetzner_config || hetzner_config.api_token === '')
 	{
-		// Start configuration flow
 		await configure();
-		main();
 		return;
 	}
 
@@ -43,6 +43,10 @@ export async function main(navigate_to?: string)
 				}
 
 				server_actions(selected_server);
+				break;
+
+			case 'configure':
+				configure();
 				break;
 
 			case 'exit':
@@ -176,5 +180,82 @@ export async function server_actions(server: Server)
 	{
 		await show_error(error);
 		server_actions(server);
+	}
+}
+
+export async function configure()
+{
+	try
+	{
+		const hetzner_config = read_hetzner_config();
+		
+		if(!hetzner_config || !hetzner_config.api_token || hetzner_config.api_token === '')
+		{
+			await configure_api_key();
+			const call_attempt = await call_hetzner_api('servers', 'GET');
+
+			if(call_attempt.successful)
+			{
+				await configure();
+				return;
+			}
+			else if (call_attempt.error.includes('401'))
+			{
+				await show_error('Incorrect API key. Go back to try again.');
+
+				try
+				{
+					update_hetzner_config({api_token: ''});
+					return;
+				}
+				catch(error)
+				{
+					throw new Error('Failed to reset API key: ' + error_to_string(error));
+				}
+			}
+			else
+			{
+				throw new Error('Hetzner API is unreachable at the moment.');
+			}
+		}
+
+		const chosen_config = await show_config();
+		if(!chosen_config)
+		{
+			main();
+			return;
+		}
+
+		switch (chosen_config)
+		{
+			case 'api_key':
+				await configure_api_key();
+				configure();
+				break;
+			
+			case 'pref_location':
+				await configure_preferred_location();
+				configure();
+				break;
+
+			case 'ssh_keys':
+				let current_default_keys: string[] = [];
+				if(hetzner_config.ssh_keys)
+				{
+					current_default_keys = hetzner_config.ssh_keys;
+				}
+
+				await configure_default_ssh_keys(current_default_keys);
+				configure();
+				break;
+			default:
+				throw new Error('Not implemented');
+				break;
+		}
+	}
+	catch(error)
+	{
+		await show_error(error);
+		configure();
 	}
 }

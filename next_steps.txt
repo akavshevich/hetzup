@@ -1,4 +1,3 @@
-Implement config UI
 Show root password upon server creation if no ssh keys configured
 Save server type, location, IPs used and other useful info on each server upon inactivating
 Implement listing of primary IPs
