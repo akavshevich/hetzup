@@ -2,7 +2,7 @@ import axios from 'axios';
 import { ArkErrors, type } from "arktype";
 
 import { read_hetzner_config } from "./configs";
-import { log_error, error_to_string } from "./utils";
+import { log_error, error_to_string, if_null_then_undefined } from "./utils";
 import { NewServerDetails, Server } from "./types";
 
 const APIResponse = type.or({"successful": "true", "response": "object"}, {"successful": "false", "error": "string"});
@@ -354,7 +354,7 @@ const SingleServerAPIStructure = type(
 		response:
 		{
 			server: ServerAPIStructure,
-			"root_password?": "string"
+			"root_password?": "string | null"
 		}
 	}
 );
@@ -409,7 +409,7 @@ export async function spin_up_server(image: string | number, name: string | numb
 			ipv4: new_server_init.public_net.ipv4.ip, 
 			ipv6: new_server_init.public_net.ipv6.ip, 
 			status: new_server_init.status,
-			root_password: response.response.root_password
+			root_password: if_null_then_undefined(response.response.root_password)
 		};
 	}
 
