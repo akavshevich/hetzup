@@ -353,7 +353,8 @@ const SingleServerAPIStructure = type(
 	{
 		response:
 		{
-			server: ServerAPIStructure
+			server: ServerAPIStructure,
+			"root_password?": "string"
 		}
 	}
 );
@@ -407,7 +408,8 @@ export async function spin_up_server(image: string | number, name: string | numb
 			id: new_server_init.id, 
 			ipv4: new_server_init.public_net.ipv4.ip, 
 			ipv6: new_server_init.public_net.ipv6.ip, 
-			status: new_server_init.status
+			status: new_server_init.status,
+			root_password: response.response.root_password
 		};
 	}
 

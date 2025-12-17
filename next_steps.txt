@@ -1,4 +1,4 @@
-Show root password upon server creation if no ssh keys configured
+Server types often unavailable at a certain location or at all. Prompt reconfiguration on error 412
 Save server type, location, IPs used and other useful info on each server upon inactivating
 Implement listing of primary IPs
 When spinning up from snapshot, use saved server info if available
@@ -46,3 +46,4 @@ Implement config repairs
 Implement getting available locations
 Implement getting ssh keys
 Implement initial API key configuration
+Show root password upon server creation if no ssh keys configured

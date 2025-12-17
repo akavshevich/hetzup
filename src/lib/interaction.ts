@@ -236,6 +236,18 @@ export async function show_error(error: any)
 	return;
 }
 
+export async function show_info(message: string)
+{
+	await get_select_response(message, 
+		[
+			new Separator(),
+			{name: 'OK', value: 1}
+		]
+	);
+
+	return;
+}
+
 export async function configure_api_key()
 {
 	let api_key = await get_text_response('Enter your Hetzner Cloud API key: ');

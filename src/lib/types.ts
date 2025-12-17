@@ -12,4 +12,4 @@ export type Server =
 };
 
 export type ServerList = Map< string | number, Server >;
-export type NewServerDetails = {id: number, ipv4: string, ipv6: string, status: ServerStatuses};
+export type NewServerDetails = {id: number, ipv4: string, ipv6: string, status: ServerStatuses, root_password?: string};

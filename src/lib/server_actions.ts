@@ -4,6 +4,8 @@ import { read_server_config } from './configs';
 import { log_error, error_to_string, sleep, format_date } from "./utils";
 import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image } from './api_calls';
 import { NewServerDetails, Server, ServerList } from './types';
+import { show_info } from './interaction';
+import chalk from 'chalk';
 
 export async function generate_server_list(): Promise< ServerList >
 {
@@ -173,8 +175,15 @@ export async function spin_up_from_snapshot(server: Server, type: string, latest
 							return;
 						}
 
+
 						clearInterval(check_on_server);
 						spinner.stop();
+
+						if(new_server_details.root_password)
+						{
+							await show_info(`Root password for ${server.name}: ${chalk.cyan(new_server_details.root_password)} It will not be shown again!`);
+						}
+
 						resolve(server_details);
 					},
 					2000
