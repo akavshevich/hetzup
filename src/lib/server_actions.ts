@@ -158,17 +158,20 @@ export async function stop_server(server: Server, mode: 'save_stop' | 'stop' = '
 						current_server_config.servers[index].ipv6 = server.ipv6;
 						current_server_config.servers[index].location = server.location;
 						server_in_config = true;
-						console.log('Found in config');
 					}
 				}
 
 				if(!server_in_config)
 				{
-					current_server_config = 
-					{
-						servers: [{name: server.name, type: server.type, ipv4: server.ipv4, ipv6: server.ipv6, location: server.location}]
-					};
-					console.log('Not found in config');
+					current_server_config.servers.push(
+						{
+							name: server.name, 
+							type: server.type, 
+							ipv4: server.ipv4, 
+							ipv6: server.ipv6, 
+							location: server.location
+						}
+					);
 				}
 			}
 			else
@@ -177,7 +180,6 @@ export async function stop_server(server: Server, mode: 'save_stop' | 'stop' = '
 				{
 					servers: [{name: server.name, type: server.type, ipv4: server.ipv4, ipv6: server.ipv6, location: server.location}]
 				};
-				console.log('No config');
 			}
 
 			update_server_config(current_server_config);
