@@ -2,7 +2,7 @@ import { clear_prompt, error_to_string, format_date, round_to_precision } from '
 import select from '@inquirer/select';
 import input from '@inquirer/input';
 import { checkbox, Separator } from '@inquirer/prompts';
-import { Server, ServerList } from './types';
+import { NewServerConfig, Server, ServerList } from './types';
 import chalk from 'chalk';
 import { read_hetzner_config, update_hetzner_config } from './configs';
 import { call_hetzner_api, get_locations, get_running_servers, get_ssh_keys } from './api_calls';
@@ -385,4 +385,26 @@ export async function show_config(): Promise<string | number | false>
 	}
 
 	return chosen_config;
+}
+
+export async function new_server_confirmation(new_server_config: NewServerConfig)
+{
+	const available_changes: SelectInquiryOptions =
+	[
+		{name: 'Confirm', value: 'no_changes'},
+		new Separator(),
+		{name: `Location: [${chalk.green(new_server_config.location)}]`, value: 'location'},
+		{name: `Type: [${chalk.green(new_server_config.type)}]`, value: 'type'},
+		{name: `Default SSH keys: [${chalk.green(new_server_config.ssh_keys.join(', '))}]`, value: 'ssh_keys'},
+		new Separator(),
+		{name: 'Cancel', value: 0}
+	];
+
+	const change_selected = await get_select_response('Config', available_changes);
+	if(!change_selected)
+	{
+		return false;
+	}
+
+	return change_selected;
 }

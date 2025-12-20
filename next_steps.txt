@@ -1,8 +1,9 @@
-Server types often unavailable at a certain location or at all. Prompt reconfiguration on error 412
-Save server type, location, IPs used and other useful info on each server upon inactivating
-Implement listing of primary IPs
-When spinning up from snapshot, use saved server info if available
-Implement custom spin up from snapshot where these details can be changed
+Before spinning up a server, show confirmation of the details: location, type, keys to use
+Implement server type choice
+Verify availability of the location/type combo before spin up attempt, show error if not
+Show the same error on Hetzner error 412
+Implement getting primary IPs (assignee_id null if unused)
+Implement listing and choice of primary IPs before spinning up
 Add quick start / quick stop that reverses the latest inactivated / spun up server as a first main menu option
 
 
@@ -47,3 +48,4 @@ Implement getting available locations
 Implement getting ssh keys
 Implement initial API key configuration
 Show root password upon server creation if no ssh keys configured
+Save server type, location, IPs used upon inactivating

@@ -1,6 +1,6 @@
 import ora from 'ora';
 
-import { read_server_config } from './configs';
+import { read_server_config, update_server_config } from './configs';
 import { log_error, error_to_string, sleep, format_date } from "./utils";
 import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image } from './api_calls';
 import { NewServerDetails, Server, ServerList } from './types';
@@ -32,7 +32,18 @@ export async function generate_server_list(): Promise< ServerList >
 	{
 		servers.set(
 			server.name, 
-			{id: server.id, name: server.name, status: 'running', snapshots: [], cores: server.cores, disk: server.disk, memory: server.memory}
+			{
+				id: server.id, 
+				name: server.name, 
+				status: 'running', 
+				snapshots: [], 
+				cores: server.cores, 
+				disk: server.disk, 
+				memory: server.memory,
+				type: server.type,
+				ipv4: server.ipv4, 
+				ipv6: server.ipv6
+			}
 		);
 	}
 
@@ -55,7 +66,10 @@ export async function generate_server_list(): Promise< ServerList >
 			name: existing_server.name,
 			status: existing_server.status, 
 			snapshots: [...existing_server.snapshots, {id: snapshot.id, date: snapshot.date, disk: snapshot.disk}],
-			disk: existing_server.disk
+			disk: existing_server.disk,
+			type: existing_server.type,
+			ipv4: existing_server.ipv4, 
+			ipv6: existing_server.ipv6
 		};
 
 		if(existing_server.status === 'inactive')
@@ -124,6 +138,34 @@ export async function stop_server(server: Server, mode: 'save_stop' | 'stop' = '
 	{
 		if(mode === 'save_stop')
 		{
+			let current_server_config = read_server_config();
+			
+			if(current_server_config)
+			{
+				let server_in_config = false;
+				for(const index in current_server_config.servers)
+				{
+					if(current_server_config.servers[index].name === server.name)
+					{
+						current_server_config.servers[index].type = server.type;
+						current_server_config.servers[index].ipv4 = server.ipv4;
+						current_server_config.servers[index].ipv6 = server.ipv6;
+						server_in_config = true;
+					}
+				}
+
+				if(!server_in_config)
+				{
+					current_server_config = {servers: [{name: server.name, type: server.type, ipv4: server.ipv4, ipv6: server.ipv6}]};
+				}
+			}
+			else
+			{
+				current_server_config = {servers: [{name: server.name, type: server.type, ipv4: server.ipv4, ipv6: server.ipv6}]};
+			}
+
+			update_server_config(current_server_config);
+
 			await save_server_to_snapshot(server);
 		}
 

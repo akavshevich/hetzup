@@ -95,7 +95,7 @@ export async function call_hetzner_api(path: string, method: APIMethod, fields: 
 	}
 }
 
-type RunningServer = {id: number, name: string, cores: number, disk: number, memory: number};
+type RunningServer = {id: number, name: string, cores: number, disk: number, memory: number, type: string, ipv4?: string, ipv6?: string};
 
 const ServerAPIStructure = type(
 	{
@@ -104,20 +104,15 @@ const ServerAPIStructure = type(
 		status: "'running' | 'initializing' | 'starting' | 'stopping' | 'off' | 'deleting' | 'migrating' | 'rebuilding' | 'unknown'",
 		server_type:
 		{
+			name: "string",
 			cores: "number",
 			disk: "number",
 			memory: "number"
 		},
 		public_net:
 		{
-			ipv4:
-			{
-				ip: "string"
-			},
-			ipv6:
-			{
-				ip: "string"
-			}
+			ipv4: type({ip: "string"}).or("null"),
+			ipv6: type({ip: "string"}).or("null"),
 		}
 	}
 );
@@ -151,9 +146,30 @@ export async function get_running_servers(): Promise<RunningServer[]>
 		const servers = [];
 
 		for (const server of response.servers)
-		{
+		{			
+			let ipv4 = undefined;
+			let ipv6 = undefined;
+
+			if (server.public_net.ipv4) 
+			{
+				ipv4 = server.public_net.ipv4.ip;
+			}
+			if (server.public_net.ipv6)
+			{
+				ipv6 = server.public_net.ipv6.ip;
+			}
+
 			servers.push(
-				{id: server.id, name: server.name, cores: server.server_type.cores, disk: server.server_type.disk, memory: server.server_type.memory}
+				{
+					id: server.id, 
+					name: server.name, 
+					cores: server.server_type.cores, 
+					disk: server.server_type.disk, 
+					memory: server.server_type.memory,
+					type: server.server_type.name,
+					ipv4: ipv4,
+					ipv6: ipv6,
+				}
 			);
 		}
 
@@ -165,7 +181,7 @@ export async function get_running_servers(): Promise<RunningServer[]>
 	}
 }
 
-const SnapshotsAPIStructure = type({images: type({id: "number", created: "string", created_from: {name: "string"}, image_size: "number"}, "[]")});
+const SnapshotsAPIStructure = type({images: type({id: "number", created: "string", created_from: {name: "string"}, image_size: "number | null"}, "[]")});
 type SnapshotsAPIStructure = typeof SnapshotsAPIStructure.infer;
 
 export async function get_snapshots(): Promise<{id: number, name: string, date: string, disk: number}[]>
@@ -183,7 +199,13 @@ export async function get_snapshots(): Promise<{id: number, name: string, date: 
 		const snapshots = [];
 		for (const image of response.images)
 		{
-			snapshots.push({id: image.id, name: image.created_from.name, date: image.created, disk: image.image_size})
+			let image_size = image.image_size;
+			if(!image_size)
+			{
+				image_size = 0;
+			}
+
+			snapshots.push({id: image.id, name: image.created_from.name, date: image.created, disk: image_size})
 		}
 
 		return snapshots;
@@ -404,10 +426,23 @@ export async function spin_up_server(image: string | number, name: string | numb
 		}
 
 		const new_server_init = response.response.server;
+
+		let ipv4 = undefined;
+		let ipv6 = undefined;
+
+		if (new_server_init.public_net.ipv4) 
+		{
+			ipv4 = new_server_init.public_net.ipv4.ip;
+		}
+		if (new_server_init.public_net.ipv6)
+		{
+			ipv6 = new_server_init.public_net.ipv6.ip;
+		}
+
 		return {
 			id: new_server_init.id, 
-			ipv4: new_server_init.public_net.ipv4.ip, 
-			ipv6: new_server_init.public_net.ipv6.ip, 
+			ipv4: ipv4, 
+			ipv6: ipv6, 
 			status: new_server_init.status,
 			root_password: if_null_then_undefined(response.response.root_password)
 		};
