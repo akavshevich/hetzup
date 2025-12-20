@@ -95,7 +95,18 @@ export async function call_hetzner_api(path: string, method: APIMethod, fields: 
 	}
 }
 
-type RunningServer = {id: number, name: string, cores: number, disk: number, memory: number, type: string, ipv4?: string, ipv6?: string};
+type RunningServer = 
+{
+	id: number, 
+	name: string, 
+	cores: number, 
+	disk: number, 
+	memory: number, 
+	type: string, 
+	ipv4?: string, 
+	ipv6?: string,
+	location: string
+};
 
 const ServerAPIStructure = type(
 	{
@@ -113,6 +124,10 @@ const ServerAPIStructure = type(
 		{
 			ipv4: type({ip: "string"}).or("null"),
 			ipv6: type({ip: "string"}).or("null"),
+		},
+		location:
+		{
+			name: "string"
 		}
 	}
 );
@@ -169,6 +184,7 @@ export async function get_running_servers(): Promise<RunningServer[]>
 					type: server.server_type.name,
 					ipv4: ipv4,
 					ipv6: ipv6,
+					location: server.location.name
 				}
 			);
 		}
@@ -471,8 +487,9 @@ export async function get_server(server_id: number): Promise<Server>
 			cores: server.server_type.cores, 
 			disk: server.server_type.disk, 
 			memory: server.server_type.memory, 
-			status:server.status, 
-			snapshots: []
+			status: server.status, 
+			snapshots: [],
+			location: server.location.name
 		};
 	}
 

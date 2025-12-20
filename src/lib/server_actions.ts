@@ -42,7 +42,8 @@ export async function generate_server_list(): Promise< ServerList >
 				memory: server.memory,
 				type: server.type,
 				ipv4: server.ipv4, 
-				ipv6: server.ipv6
+				ipv6: server.ipv6,
+				location: server.location
 			}
 		);
 	}
@@ -55,7 +56,11 @@ export async function generate_server_list(): Promise< ServerList >
 		{
 			servers.set(
 				snapshot.name, 
-				{id: snapshot.id, name: snapshot.name, status: 'inactive', snapshots: [{id: snapshot.id, date: snapshot.date, disk: snapshot.disk}], disk: snapshot.disk}
+				{
+					id: snapshot.id, 
+					name: snapshot.name, 
+					status: 'inactive', 
+					snapshots: [{id: snapshot.id, date: snapshot.date, disk: snapshot.disk}], disk: snapshot.disk}
 			);
 			continue;
 		}
@@ -69,7 +74,8 @@ export async function generate_server_list(): Promise< ServerList >
 			disk: existing_server.disk,
 			type: existing_server.type,
 			ipv4: existing_server.ipv4, 
-			ipv6: existing_server.ipv6
+			ipv6: existing_server.ipv6,
+			location: existing_server.location
 		};
 
 		if(existing_server.status === 'inactive')
@@ -150,18 +156,28 @@ export async function stop_server(server: Server, mode: 'save_stop' | 'stop' = '
 						current_server_config.servers[index].type = server.type;
 						current_server_config.servers[index].ipv4 = server.ipv4;
 						current_server_config.servers[index].ipv6 = server.ipv6;
+						current_server_config.servers[index].location = server.location;
 						server_in_config = true;
+						console.log('Found in config');
 					}
 				}
 
 				if(!server_in_config)
 				{
-					current_server_config = {servers: [{name: server.name, type: server.type, ipv4: server.ipv4, ipv6: server.ipv6}]};
+					current_server_config = 
+					{
+						servers: [{name: server.name, type: server.type, ipv4: server.ipv4, ipv6: server.ipv6, location: server.location}]
+					};
+					console.log('Not found in config');
 				}
 			}
 			else
 			{
-				current_server_config = {servers: [{name: server.name, type: server.type, ipv4: server.ipv4, ipv6: server.ipv6}]};
+				current_server_config = 
+				{
+					servers: [{name: server.name, type: server.type, ipv4: server.ipv4, ipv6: server.ipv6, location: server.location}]
+				};
+				console.log('No config');
 			}
 
 			update_server_config(current_server_config);

@@ -64,11 +64,14 @@ export async function main(navigate_to?: string)
 	}
 }
 
-export async function server_actions(server: Server)
+export async function server_actions(server: Server, action: string | number | false = false)
 {
 	try
 	{
-		const action = await show_server_actions(server); 
+		if(!action)
+		{
+			action = await show_server_actions(server); 
+		}
 
 		if(!action)
 		{
@@ -156,6 +159,20 @@ export async function server_actions(server: Server)
 					}
 
 					await delete_snapshot_visual(snapshot_id);
+
+					server.snapshots = server.snapshots.filter(
+						function (snapshot)
+						{
+							if(snapshot.id === snapshot_id)
+							{
+								return false;
+							}
+							return true;
+						}
+					);
+
+					server_actions(server, 'delete_snapshots');
+					return;
 				}
 
 				main('servers');

@@ -157,7 +157,7 @@ export async function show_server_actions(server: Server): Promise<string | numb
 
 export async function show_snapshots(server: Server): Promise< number | string | false>
 {
-	const snapshots = server.snapshots.reverse();
+	const snapshots = [...server.snapshots].reverse();
 	const snapshot_list: SelectInquiryOptions = [];
 
 	for (let index = 0; index < snapshots.length; index++)

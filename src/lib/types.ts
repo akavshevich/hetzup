@@ -11,7 +11,8 @@ export type Server =
 	memory?: number,
 	type?: string,
 	ipv4?: string, 
-	ipv6?: string
+	ipv6?: string,
+	location?: string
 };
 
 export type ServerList = Map< string | number, Server >;
