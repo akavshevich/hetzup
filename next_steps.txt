@@ -1,8 +1,8 @@
-Before spinning up a server, show confirmation of the details: location, type, keys to use
+Implement IP choices
 Implement server type choice
+Before spinning up a server, show confirmation of the details: location, type, keys, IPs to use
 Verify availability of the location/type combo before spin up attempt, show error if not
 Show the same error on Hetzner error 412
-Implement getting primary IPs (assignee_id null if unused)
 Implement listing and choice of primary IPs before spinning up
 Add quick start / quick stop that reverses the latest inactivated / spun up server as a first main menu option
 
@@ -49,3 +49,4 @@ Implement getting ssh keys
 Implement initial API key configuration
 Show root password upon server creation if no ssh keys configured
 Save server type, location, IPs used upon inactivating
+Implement getting primary IPs (assignee_id null if unused)

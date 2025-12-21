@@ -620,3 +620,73 @@ export async function get_ssh_keys(): Promise<string[]>
 		throw new Error('Failed to call API to get SSH keys: ' + call.error);
 	}
 }
+
+
+const PrimaryIpsAPIStructure = type(
+{
+	primary_ips: type(
+	{
+		ip: "string",
+		id: "number",
+		name: "string",
+		type: "'ipv4' | 'ipv6'",
+		assignee_id: "number | null",
+		location: {"name": "string"},
+		auto_delete: "boolean"
+	}, 
+	"[]")
+});
+type PrimaryIpsAPIStructure = typeof PrimaryIpsAPIStructure.infer;
+
+type PrimaryIP = 
+{
+	ip: string,
+	id: number,
+	name: string,
+	type: 'ipv4' | 'ipv6',
+	assigned: boolean,
+	location: string,
+	auto_delete: boolean
+};
+
+export async function get_primary_ips(): Promise<PrimaryIP[]>
+{
+	const call = await call_hetzner_api('primary_ips', 'GET');
+
+	if(call.successful)
+	{
+		const response = PrimaryIpsAPIStructure(call.response);
+		if(response instanceof type.errors)
+		{
+			throw new Error('Unexpected API response for a list of primary IPs: ' + response.summary);
+		}
+
+		const primary_ips = [];
+		for(const ip of response.primary_ips)
+		{
+			let assigned = false;
+			if(ip.assignee_id)
+			{
+				assigned = true;
+			}
+
+			primary_ips.push(
+				{
+					ip: ip.ip,
+					id: ip.id,
+					name: ip.name,
+					type: ip.type,
+					assigned,
+					location: ip.location.name,
+					auto_delete: ip.auto_delete
+				}
+			);
+		}
+
+		return primary_ips;
+	}
+	else
+	{
+		throw new Error('Failed to call API to get primary IPs: ' + call.error);
+	}
+}

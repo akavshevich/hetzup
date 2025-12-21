@@ -71,7 +71,8 @@ export async function select_server(servers: ServerList): Promise< Server | fals
 	servers.forEach(
 		function(server, server_name)
 		{
-			let display_server = chalk.green(server_name)+ ' Status: ' + server.status;
+			let server_name_color = chalk.green(server_name);
+			let display_server = ' Status: ' + server.status;
 
 			if(['running', 'starting', 'migrating', 'rebuilding', 'off'].includes(server.status))
 			{
@@ -79,10 +80,11 @@ export async function select_server(servers: ServerList): Promise< Server | fals
 			}
 			else
 			{
+				server_name_color = chalk.yellow(server_name);
 				display_server += ' | Required disk space: ' + round_to_precision(server.disk, 2) + ' GB';
 			}
 
-			server_select_list.push({name: display_server, value: server_name});
+			server_select_list.push({name: server_name_color + display_server, value: server_name});
 		}
 	);
 
