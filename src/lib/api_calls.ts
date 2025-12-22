@@ -8,7 +8,7 @@ import { NewServerDetails, PrimaryIP, Server } from "./types";
 const APIResponse = type.or({"successful": "true", "response": "object"}, {"successful": "false", "error": "string"});
 type APIResponse = typeof APIResponse.infer;
 
-type APIMethod = 'GET' | 'POST' | 'DELETE';
+type APIMethod = 'GET' | 'POST' | 'DELETE' | 'PUT';
 type APIFields = {[index: string]: any};
 
 export async function call_hetzner_api(path: string, method: APIMethod, fields: APIFields = {}, page: false | number = false): Promise<APIResponse>
@@ -33,7 +33,7 @@ export async function call_hetzner_api(path: string, method: APIMethod, fields: 
 		data: {}
 	};
 
-	if(method === 'POST')
+	if(method === 'POST' || method === 'PUT')
 	{
 		request.data = fields;
 	}
@@ -122,8 +122,8 @@ const ServerAPIStructure = type(
 		},
 		public_net:
 		{
-			ipv4: type({ip: "string"}).or("null"),
-			ipv6: type({ip: "string"}).or("null"),
+			ipv4: type({ip: "string", id: "number"}).or("null"),
+			ipv6: type({ip: "string", id: "number"}).or("null"),
 		},
 		location:
 		{
@@ -467,7 +467,7 @@ export async function spin_up_server(image: string | number, name: string | numb
 	throw new Error('Unable to spin up server: ' + call.error);
 }
 
-export async function get_server(server_id: number): Promise<Server>
+export async function get_server(server_id: number)
 {
 	const get_server_details = await call_hetzner_api(`servers/${server_id}`, 'GET');
 
@@ -481,16 +481,20 @@ export async function get_server(server_id: number): Promise<Server>
 
 		const server = server_details.response.server;
 
-		return {
-			id: server.id, 
-			name: server.name, 
-			cores: server.server_type.cores, 
-			disk: server.server_type.disk, 
-			memory: server.server_type.memory, 
-			status: server.status, 
+		const server_info = 
+		{
+			id: server.id,
+			name: server.name,
+			cores: server.server_type.cores,
+			disk: server.server_type.disk,
+			memory: server.server_type.memory,
+			status: server.status,
 			snapshots: [],
-			location: server.location.name
+			location: server.location.name,
+			ips: server.public_net
 		};
+
+		return server_info;
 	}
 
 	throw new Error('Unable to get server: ' + get_server_details.error);
@@ -690,4 +694,16 @@ export async function delete_primary_ip(ip_id: number)
 	}
 
 	throw new Error('Unable to delete primary IP: ' + call.error);
+}
+
+export async function change_ip_auto_delete_status(ip_id: number, auto_delete: boolean)
+{
+	const call = await call_hetzner_api(`primary_ips/${ip_id}`, 'PUT', {auto_delete: auto_delete});
+
+	if(call.successful)
+	{
+		return;
+	}
+
+	throw new Error('Unable to change primary IP auto delete status: ' + call.error);
 }

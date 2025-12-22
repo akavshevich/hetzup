@@ -2,7 +2,7 @@ import ora from 'ora';
 
 import { read_server_config, update_server_config } from './configs';
 import { log_error, error_to_string, sleep, format_date } from "./utils";
-import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image, get_primary_ips, delete_primary_ip } from './api_calls';
+import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image, get_primary_ips, delete_primary_ip, change_ip_auto_delete_status } from './api_calls';
 import { NewServerDetails, PrimaryIP, Server, ServerList } from './types';
 import { show_info } from './interaction';
 import chalk from 'chalk';
@@ -406,6 +406,31 @@ export async function delete_ip(ip: PrimaryIP)
 	try
 	{
 		await delete_primary_ip(ip.id);
+		spinner.stop();
+	}
+	catch (error)
+	{
+		spinner.stop();
+		throw new Error(error_to_string(error));
+	}
+}
+
+export async function update_ip_retention_policy(server: Server, keep_ipv4: boolean, keep_ipv6: boolean)
+{
+	const spinner = ora({text: `Updating IP retention policy for ${server.name} ...`, spinner: 'point', color: 'cyan'}).start();
+	try
+	{
+		const server_info = await get_server(server.id);
+		if(server_info.ips.ipv4)
+		{
+			await change_ip_auto_delete_status(server_info.ips.ipv4.id, !keep_ipv4);
+		}
+
+		if(server_info.ips.ipv6)
+		{
+			await change_ip_auto_delete_status(server_info.ips.ipv6.id, !keep_ipv6);
+		}
+
 		spinner.stop();
 	}
 	catch (error)

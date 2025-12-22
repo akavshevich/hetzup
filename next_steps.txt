@@ -1,4 +1,3 @@
-Implement updating IPs auto_delete status
 Before spinning up a server, show confirmation of the details: location, type, keys, IPs to use
 Implement server type choice
 Verify availability of the location/type combo before spin up attempt, show error if not
@@ -54,3 +53,4 @@ Implement IP choices
 Implement primary IP deletion
 Add keep IP config option (yes/no/ask)
 Implement decision whether to keep IP on all interactions that delete server
+Implement updating IPs auto_delete status
