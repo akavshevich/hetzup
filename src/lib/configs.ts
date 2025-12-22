@@ -6,7 +6,9 @@ const HetznerConfig = type(
 	{
 		"api_token": "string",
 		"preferred_location?": "string",
-		"ssh_keys?": "string[]"
+		"ssh_keys?": "string[]",
+		"keep_ipv4": "'yes' | 'no' | 'ask'",
+		"keep_ipv6": "'yes' | 'no' | 'ask'"
 	}	
 );
 type HetznerConfig = typeof HetznerConfig.infer;
@@ -111,6 +113,14 @@ function repair_config(config: 'hetzner' | 'servers', errors?: ArkErrors)
 				else if(problematic_prop === 'ssh_keys')
 				{
 					hetzner_fixes.ssh_keys = [];
+				}
+				else if(problematic_prop === 'keep_ipv4')
+				{
+					hetzner_fixes.keep_ipv4 = 'ask';
+				}
+				else if(problematic_prop === 'keep_ipv6')
+				{
+					hetzner_fixes.keep_ipv6 = 'ask';
 				}
 				else
 				{

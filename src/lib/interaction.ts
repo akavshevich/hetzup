@@ -354,12 +354,52 @@ export async function configure_default_ssh_keys(current_keys: string[])
 	}
 }
 
+export async function configure_ip_retention(type: 'ipv4' | 'ipv6')
+{
+	let display_ip_type = 'IPv4';	
+
+	if(type === 'ipv6')
+	{
+		display_ip_type = 'IPv6';
+	}
+
+	const retention_options: SelectInquiryOptions = 
+	[
+		{name: 'Yes', value: 'yes'},
+		{name: 'No', value: 'no'},
+		{name: 'Ask me', value: 'ask'},
+		new Separator(),
+		{name: 'Back', value: 0}
+	];
+
+	try
+	{
+		const selected_retention_behavior = await get_select_response(`Keep ${display_ip_type} when stopping a server`, retention_options);
+
+		if(selected_retention_behavior === 'yes' || selected_retention_behavior === 'no' || selected_retention_behavior === 'ask')
+		{
+			if(type === 'ipv4')
+			{
+				update_hetzner_config({keep_ipv4: selected_retention_behavior});
+				return;
+			}
+			update_hetzner_config({keep_ipv6: selected_retention_behavior});
+		}
+	}
+	catch (error)
+	{
+		throw new Error(error_to_string(error));
+	}
+}
+
 export async function show_config(): Promise<string | number | false>
 {
 	const hetzner_config = read_hetzner_config();
 
 	let pref_location = 'fsn1';
 	let ssh_keys: string[] = [];
+	let keep_ipv4 = 'ask';
+	let keep_ipv6 = 'ask';
 
 	if(hetzner_config && hetzner_config.preferred_location)
 	{
@@ -371,11 +411,19 @@ export async function show_config(): Promise<string | number | false>
 		ssh_keys = hetzner_config.ssh_keys;
 	}
 
+	if(hetzner_config)
+	{
+		keep_ipv4 = hetzner_config.keep_ipv4;
+		keep_ipv6 = hetzner_config.keep_ipv6;
+	}
+
 	const available_configs: SelectInquiryOptions =
 	[
 		{name: 'Change Hetzner Cloud API key', value: 'api_key'},
 		{name: `Preferred location: [${chalk.green(pref_location)}]`, value: 'pref_location'},
 		{name: `Default SSH keys: [${chalk.green(ssh_keys.join(', '))}]`, value: 'ssh_keys'},
+		{name: `Keep IPv4 when stopping a server (at cost): [${chalk.green(keep_ipv4)}]`, value: 'keep_ipv4'},
+		{name: `Keep IPv6 when stopping a server (free): [${chalk.green(keep_ipv6)}]`, value: 'keep_ipv6'},
 		new Separator(),
 		{name: 'Back', value: 0}
 	];

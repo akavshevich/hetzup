@@ -1,4 +1,3 @@
-Add keep IP config option (yes/no/ask)
 Implement decision to keep IP on all interactions that delete server
 Implement server type choice
 Before spinning up a server, show confirmation of the details: location, type, keys, IPs to use
@@ -53,3 +52,4 @@ Save server type, location, IPs used upon inactivating
 Implement getting primary IPs (assignee_id null if unused)
 Implement IP choices
 Implement primary IP deletion
+Add keep IP config option (yes/no/ask)

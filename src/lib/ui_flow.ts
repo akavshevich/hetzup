@@ -1,5 +1,5 @@
 import ora from "ora";
-import { configure_api_key, configure_default_ssh_keys, configure_preferred_location, confirm_dangerous, select_server, show_config, show_error, show_main_menu, show_server_actions, show_snapshots } from "./interaction";
+import { configure_api_key, configure_default_ssh_keys, configure_ip_retention, configure_preferred_location, confirm_dangerous, select_server, show_config, show_error, show_main_menu, show_server_actions, show_snapshots } from "./interaction";
 import { complete_server_removal, delete_snapshot_visual, generate_server_list, get_snapshot_details, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server } from "./server_actions";
 import { Server } from "./types";
 import { error_to_string, format_date, sleep } from "./utils";
@@ -263,6 +263,17 @@ export async function configure()
 				}
 
 				await configure_default_ssh_keys(current_default_keys);
+				configure();
+				break;
+			case 'keep_ipv4':
+			case 'keep_ipv6':
+				let retention_config_type: 'ipv4' | 'ipv6' = 'ipv4';
+				if(chosen_config === 'keep_ipv6')
+				{
+					retention_config_type = 'ipv6';
+				}
+				
+				await configure_ip_retention(retention_config_type);
 				configure();
 				break;
 			default:
