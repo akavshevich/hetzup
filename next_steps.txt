@@ -1,4 +1,6 @@
-Implement IP choices
+Implement primary IP deletion
+Add keep IP config option (yes/no/ask)
+Implement decision to keep IP on all interactions that delete server
 Implement server type choice
 Before spinning up a server, show confirmation of the details: location, type, keys, IPs to use
 Verify availability of the location/type combo before spin up attempt, show error if not
@@ -50,3 +52,4 @@ Implement initial API key configuration
 Show root password upon server creation if no ssh keys configured
 Save server type, location, IPs used upon inactivating
 Implement getting primary IPs (assignee_id null if unused)
+Implement IP choices

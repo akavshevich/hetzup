@@ -2,8 +2,8 @@ import ora from 'ora';
 
 import { read_server_config, update_server_config } from './configs';
 import { log_error, error_to_string, sleep, format_date } from "./utils";
-import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image } from './api_calls';
-import { NewServerDetails, Server, ServerList } from './types';
+import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image, get_primary_ips } from './api_calls';
+import { NewServerDetails, PrimaryIP, Server, ServerList } from './types';
 import { show_info } from './interaction';
 import chalk from 'chalk';
 
@@ -363,4 +363,39 @@ export function get_snapshot_details(server: Server, snapshot_id: number | strin
 	}
 
 	return {id: snapshot_details.id, date: snapshot_details.date, disk: snapshot_details.disk};
+}
+
+export async function load_available_ips(location: string): Promise<{ ipv4: PrimaryIP[]; ipv6: PrimaryIP[]; }>
+{
+	const spinner = ora({text: 'Loading primary IPs', spinner: 'point', color: 'cyan'}).start();
+
+	try
+	{
+		const ips = await get_primary_ips();
+		const ipv4: PrimaryIP[] = [];
+		const ipv6: PrimaryIP[] = [];
+
+		for(const ip of ips)
+		{
+			if(ip.assigned || ip.location !== location)
+			{
+				continue;
+			}
+
+			if(ip.type === 'ipv4')
+			{
+				ipv4.push(ip);
+				continue;
+			}
+			ipv6.push(ip);
+		}
+
+		spinner.stop();
+		return {ipv4, ipv6};
+	}
+	catch(error)
+	{
+		spinner.stop();
+		throw new Error(error_to_string(error));
+	}
 }

@@ -26,3 +26,14 @@ export type NewServerConfig =
 	type: 'string',
 	ssh_keys: string[]
 };
+
+export type PrimaryIP = 
+{
+	ip: string,
+	id: number,
+	name: string,
+	type: 'ipv4' | 'ipv6',
+	assigned: number | false,
+	location: string,
+	auto_delete: boolean
+};

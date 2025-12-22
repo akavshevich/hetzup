@@ -1,11 +1,11 @@
-import { get_select_response, select_server, show_server_actions, show_snapshots } from './lib/interaction';
+import { get_select_response, select_ips, select_server, show_server_actions, show_snapshots } from './lib/interaction';
 import { read_hetzner_config, read_server_config, update_hetzner_config, update_server_config } from './lib/configs';
 import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, delete_server, delete_snapshot, rebuild_server_from_image, get_locations, get_ssh_keys, get_primary_ips } from './lib/api_calls';
 
 import select, { Separator } from '@inquirer/select';
 import chalk from 'chalk';
 import readline from 'readline';
-import { complete_server_removal, delete_snapshot_visual, generate_server_list, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server } from './lib/server_actions';
+import { complete_server_removal, delete_snapshot_visual, generate_server_list, load_available_ips, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server } from './lib/server_actions';
 import { main } from './lib/ui_flow';
 
 console.log('');
@@ -21,6 +21,7 @@ async function test()
 {
 	try 
 	{
+
 		// const running_servers = await get_running_servers();
 
 		// const servers_to_display = [{name: chalk.red('a'), value: 1}, {name: chalk.green('b'), value: 2}];
@@ -77,8 +78,9 @@ async function test()
 		// const locations = await get_locations();
 		// const ssh_keys = await get_ssh_keys();
 		// console.log(ssh_keys);
-
-		console.log(await get_primary_ips());
+		const available_ips = await load_available_ips('fsn1');
+		const selected_ips = await select_ips(available_ips);
+		console.log(selected_ips);
 	}
 	catch (error)
 	{

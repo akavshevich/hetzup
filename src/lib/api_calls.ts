@@ -3,7 +3,7 @@ import { ArkErrors, type } from "arktype";
 
 import { read_hetzner_config } from "./configs";
 import { log_error, error_to_string, if_null_then_undefined } from "./utils";
-import { NewServerDetails, Server } from "./types";
+import { NewServerDetails, PrimaryIP, Server } from "./types";
 
 const APIResponse = type.or({"successful": "true", "response": "object"}, {"successful": "false", "error": "string"});
 type APIResponse = typeof APIResponse.infer;
@@ -638,17 +638,6 @@ const PrimaryIpsAPIStructure = type(
 });
 type PrimaryIpsAPIStructure = typeof PrimaryIpsAPIStructure.infer;
 
-type PrimaryIP = 
-{
-	ip: string,
-	id: number,
-	name: string,
-	type: 'ipv4' | 'ipv6',
-	assigned: boolean,
-	location: string,
-	auto_delete: boolean
-};
-
 export async function get_primary_ips(): Promise<PrimaryIP[]>
 {
 	const call = await call_hetzner_api('primary_ips', 'GET');
@@ -661,13 +650,13 @@ export async function get_primary_ips(): Promise<PrimaryIP[]>
 			throw new Error('Unexpected API response for a list of primary IPs: ' + response.summary);
 		}
 
-		const primary_ips = [];
+		const primary_ips: PrimaryIP[] = [];
 		for(const ip of response.primary_ips)
 		{
-			let assigned = false;
+			let assigned: number | false = false;
 			if(ip.assignee_id)
 			{
-				assigned = true;
+				assigned = ip.assignee_id;
 			}
 
 			primary_ips.push(
@@ -676,7 +665,7 @@ export async function get_primary_ips(): Promise<PrimaryIP[]>
 					id: ip.id,
 					name: ip.name,
 					type: ip.type,
-					assigned,
+					assigned: assigned,
 					location: ip.location.name,
 					auto_delete: ip.auto_delete
 				}

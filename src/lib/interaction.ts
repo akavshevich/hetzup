@@ -2,7 +2,7 @@ import { clear_prompt, error_to_string, format_date, round_to_precision } from '
 import select from '@inquirer/select';
 import input from '@inquirer/input';
 import { checkbox, Separator } from '@inquirer/prompts';
-import { NewServerConfig, Server, ServerList } from './types';
+import { NewServerConfig, PrimaryIP, Server, ServerList } from './types';
 import chalk from 'chalk';
 import { read_hetzner_config, update_hetzner_config } from './configs';
 import { call_hetzner_api, get_locations, get_running_servers, get_ssh_keys } from './api_calls';
@@ -387,6 +387,102 @@ export async function show_config(): Promise<string | number | false>
 	}
 
 	return chosen_config;
+}
+
+export async function select_ips(available_ips: { ipv4: PrimaryIP[]; ipv6: PrimaryIP[]; }, ipv4: string = 'none', ipv6: string = 'none'): 
+																										Promise<{ ipv4: string; ipv6: string; }>
+{
+	let ipv4_selected = 'none';
+	let ipv4_display = 'Don\'t assign'; 
+
+	if(ipv4 === 'new')
+	{
+		ipv4_selected = 'new';
+		ipv4_display = 'Assign new IP'; 
+	}
+
+	const ipv4_options: SelectInquiryOptions = [];
+	for(let ip of available_ips.ipv4)
+	{
+		if(ip.ip === ipv4)
+		{
+			ipv4_selected = ip.ip;
+			ipv4_display = `${ip.name} [${ip.ip}]`; 
+		}
+
+		ipv4_options.push({name: `${ip.ip} (${ip.name})`, value: ip.ip});
+	}
+	ipv4_options.push({name: 'Assign new IP', value: 'new'});
+	ipv4_options.push({name: 'Don\'t assign IPv4', value: 'none'});
+	ipv4_options.push(new Separator());
+	ipv4_options.push({name: 'Back', value: 0});
+
+	let ipv6_selected = 'none';
+	let ipv6_display = 'Don\'t assign'; 
+
+	if(ipv6 === 'new')
+	{
+		ipv6_selected = 'new';
+		ipv6_display = 'Assign new IP'; 
+	}
+
+	const ipv6_options: SelectInquiryOptions = [];
+	for(let ip of available_ips.ipv6)
+	{
+		if(ip.ip === ipv6)
+		{
+			ipv6_selected = ip.ip;
+			ipv6_display = `${ip.name} [${ip.ip}]`;
+		}
+
+		ipv6_options.push({name: `${ip.ip} (${ip.name})`, value: ip.ip});
+	}
+	ipv6_options.push({name: 'Assign new IP', value: 'new'});
+	ipv6_options.push({name: 'Don\'t assign IPv6', value: 'none'});
+	ipv6_options.push(new Separator());
+	ipv6_options.push({name: 'Back', value: 0});
+
+	const select_ip_type: SelectInquiryOptions = 
+	[
+		{name: `IPv4: ${ipv4_display}`, value: 'ipv4'},
+		{name: `IPv6: ${ipv6_display}`, value: 'ipv6'},
+		new Separator(),
+		{name: 'Confirm', value: 0}
+	];
+
+	const ip_type_selected = await get_select_response('IPs to assign', select_ip_type);
+	if(!ip_type_selected)
+	{
+		if(ipv4_selected === 'none' && ipv6_selected === 'none')
+		{
+			throw new Error('Server has neither IPv4 or IPv6 assigned');
+		}
+		return { ipv4: ipv4_selected, ipv6: ipv6_selected };
+	}
+
+	let ip_options = ipv4_options;
+	let selection_prompt = 'IPv4:';
+
+	if(ip_type_selected === 'ipv6')
+	{
+		ip_options = ipv6_options;
+		selection_prompt = 'IPv6:';
+	}
+
+	const new_ip_choice = await get_select_response(selection_prompt, ip_options);
+	if(typeof new_ip_choice === 'string')
+	{
+		if(ip_type_selected === 'ipv4')
+		{
+			ipv4_selected = new_ip_choice;
+		}
+		else
+		{
+			ipv6_selected = new_ip_choice;
+		}
+	}
+
+	return await select_ips(available_ips, ipv4_selected, ipv6_selected);
 }
 
 export async function new_server_confirmation(new_server_config: NewServerConfig)
