@@ -2,7 +2,7 @@ import ora from 'ora';
 
 import { read_server_config, update_server_config } from './configs';
 import { log_error, error_to_string, sleep, format_date } from "./utils";
-import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image, get_primary_ips } from './api_calls';
+import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image, get_primary_ips, delete_primary_ip } from './api_calls';
 import { NewServerDetails, PrimaryIP, Server, ServerList } from './types';
 import { show_info } from './interaction';
 import chalk from 'chalk';
@@ -394,6 +394,21 @@ export async function load_available_ips(location: string): Promise<{ ipv4: Prim
 		return {ipv4, ipv6};
 	}
 	catch(error)
+	{
+		spinner.stop();
+		throw new Error(error_to_string(error));
+	}
+}
+
+export async function delete_ip(ip: PrimaryIP)
+{
+	const spinner = ora({text: 'Deleting IP address...', spinner: 'point', color: 'red'}).start();
+	try
+	{
+		await delete_primary_ip(ip.id);
+		spinner.stop();
+	}
+	catch (error)
 	{
 		spinner.stop();
 		throw new Error(error_to_string(error));

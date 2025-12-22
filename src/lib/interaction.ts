@@ -398,7 +398,7 @@ export async function select_ips(available_ips: { ipv4: PrimaryIP[]; ipv6: Prima
 	if(ipv4 === 'new')
 	{
 		ipv4_selected = 'new';
-		ipv4_display = 'Assign new IP'; 
+		ipv4_display = chalk.green('Assign new IP');
 	}
 
 	const ipv4_options: SelectInquiryOptions = [];
@@ -407,7 +407,7 @@ export async function select_ips(available_ips: { ipv4: PrimaryIP[]; ipv6: Prima
 		if(ip.ip === ipv4)
 		{
 			ipv4_selected = ip.ip;
-			ipv4_display = `${ip.name} [${ip.ip}]`; 
+			ipv4_display = `${ip.name} [${chalk.green(ip.ip)}]`;
 		}
 
 		ipv4_options.push({name: `${ip.ip} (${ip.name})`, value: ip.ip});
@@ -423,7 +423,7 @@ export async function select_ips(available_ips: { ipv4: PrimaryIP[]; ipv6: Prima
 	if(ipv6 === 'new')
 	{
 		ipv6_selected = 'new';
-		ipv6_display = 'Assign new IP'; 
+		ipv6_display = chalk.green('Assign new IP');
 	}
 
 	const ipv6_options: SelectInquiryOptions = [];
@@ -432,7 +432,7 @@ export async function select_ips(available_ips: { ipv4: PrimaryIP[]; ipv6: Prima
 		if(ip.ip === ipv6)
 		{
 			ipv6_selected = ip.ip;
-			ipv6_display = `${ip.name} [${ip.ip}]`;
+			ipv6_display = `${ip.name} [${chalk.green(ip.ip)}]`;
 		}
 
 		ipv6_options.push({name: `${ip.ip} (${ip.name})`, value: ip.ip});

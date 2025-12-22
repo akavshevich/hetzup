@@ -679,3 +679,15 @@ export async function get_primary_ips(): Promise<PrimaryIP[]>
 		throw new Error('Failed to call API to get primary IPs: ' + call.error);
 	}
 }
+
+export async function delete_primary_ip(ip_id: number)
+{
+	const call = await call_hetzner_api(`primary_ips/${ip_id}`, 'DELETE');
+
+	if(call.successful)
+	{
+		return;
+	}
+
+	throw new Error('Unable to delete primary IP: ' + call.error);
+}

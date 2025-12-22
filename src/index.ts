@@ -5,7 +5,7 @@ import { get_running_servers, get_snapshots, get_available_server_types, initial
 import select, { Separator } from '@inquirer/select';
 import chalk from 'chalk';
 import readline from 'readline';
-import { complete_server_removal, delete_snapshot_visual, generate_server_list, load_available_ips, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server } from './lib/server_actions';
+import { complete_server_removal, delete_ip, delete_snapshot_visual, generate_server_list, load_available_ips, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server } from './lib/server_actions';
 import { main } from './lib/ui_flow';
 
 console.log('');
@@ -78,9 +78,15 @@ async function test()
 		// const locations = await get_locations();
 		// const ssh_keys = await get_ssh_keys();
 		// console.log(ssh_keys);
+
 		const available_ips = await load_available_ips('fsn1');
 		const selected_ips = await select_ips(available_ips);
 		console.log(selected_ips);
+		
+		// for(const ip of available_ips.ipv6)
+		// {
+		// 	await delete_ip(ip);
+		// }
 	}
 	catch (error)
 	{
