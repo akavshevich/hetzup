@@ -1,5 +1,5 @@
 import ora from "ora";
-import { configure_api_key, configure_default_ssh_keys, configure_ip_retention, configure_preferred_location, confirm_dangerous, select_server, show_config, show_error, show_main_menu, show_server_actions, show_snapshots } from "./interaction";
+import { configure_api_key, configure_default_ssh_keys, configure_ip_retention, configure_preferred_location, confirm_dangerous, decide_to_keep_ips, select_server, show_config, show_error, show_main_menu, show_server_actions, show_snapshots } from "./interaction";
 import { complete_server_removal, delete_snapshot_visual, generate_server_list, get_snapshot_details, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server } from "./server_actions";
 import { Server } from "./types";
 import { error_to_string, format_date, sleep } from "./utils";
@@ -103,6 +103,8 @@ export async function server_actions(server: Server, action: string | number | f
 					}
 				}
 
+				const ip_retention_decision = await decide_to_keep_ips(server);
+
 				await stop_server(server, action);
 				main('servers');
 				return;
@@ -184,6 +186,7 @@ export async function server_actions(server: Server, action: string | number | f
 					`Are you sure you want to completely delete ${server.name} and all its snapshots?`, true);
 				if(confirm_delete_completely)
 				{
+					const ip_retention_decision = await decide_to_keep_ips(server);
 					await complete_server_removal(server);
 				}
 				main('servers');
@@ -272,7 +275,7 @@ export async function configure()
 				{
 					retention_config_type = 'ipv6';
 				}
-				
+
 				await configure_ip_retention(retention_config_type);
 				configure();
 				break;

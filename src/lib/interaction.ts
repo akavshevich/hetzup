@@ -533,6 +533,57 @@ export async function select_ips(available_ips: { ipv4: PrimaryIP[]; ipv6: Prima
 	return await select_ips(available_ips, ipv4_selected, ipv6_selected);
 }
 
+export async function decide_to_keep_ips(server: Server): Promise<{ ipv4: boolean; ipv6: boolean; }>
+{
+	let keep_ipv4 = true;
+	let keep_ipv6 = true;
+
+	const hetzner_config = read_hetzner_config();
+	if(server.ipv4 && hetzner_config)
+	{
+		if(hetzner_config.keep_ipv4 === 'no')
+		{
+			keep_ipv4 = false;
+		}
+
+		if(hetzner_config.keep_ipv4 === 'ask')
+		{
+			const ipv4_decision = await get_select_response(
+				`Keep IPv4? ${chalk.yellow(server.ipv4)}`, 
+				[{name: 'Keep', value: 'keep'}, {name: 'Discard', value: 'discard'}]
+			);
+
+			if(ipv4_decision === 'discard')
+			{
+				keep_ipv4 = false;
+			}
+		}
+	}
+
+	if(server.ipv6 && hetzner_config)
+	{
+		if(hetzner_config.keep_ipv6 === 'no')
+		{
+			keep_ipv6 = false;
+		}
+
+		if(hetzner_config.keep_ipv6 === 'ask')
+		{
+			const ipv6_decision = await get_select_response(
+				`Keep IPv6? ${chalk.yellow(server.ipv6)}`, 
+				[{name: 'Keep', value: 'keep'}, {name: 'Discard', value: 'discard'}]
+			);
+
+			if(ipv6_decision === 'discard')
+			{
+				keep_ipv6 = false;
+			}
+		}
+	}
+
+	return {ipv4: keep_ipv4, ipv6: keep_ipv6};
+}
+
 export async function new_server_confirmation(new_server_config: NewServerConfig)
 {
 	const available_changes: SelectInquiryOptions =
