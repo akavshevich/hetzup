@@ -21,10 +21,12 @@ export type NewServerDetails = {id: number, ipv4?: string, ipv6?: string, status
 export type NewServerConfig = 
 {
 	name: string | number,
-	snapshot?: {id: number, date: string, disk: number},
-	location: 'string',
-	type: 'string',
-	ssh_keys: string[]
+	snapshot_id?: number,
+	location: string,
+	type: string,
+	ssh_keys: string[],
+	ipv4?: string, 
+	ipv6?: string,
 };
 
 export type PrimaryIP = 

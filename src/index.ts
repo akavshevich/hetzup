@@ -87,7 +87,7 @@ async function test()
 		// 	await delete_ip(ip);
 		// }
 
-		console.log(determine_preselected_config());
+		console.log(await determine_preselected_config(selected_server));
 	}
 	catch (error)
 	{

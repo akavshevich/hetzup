@@ -459,11 +459,28 @@ export function read_config_for_server(server: Server)
 	return false;
 }
 
-export function determine_preselected_config(server?: Server)
+export function get_ip_id(ip: string, type: 'ipv4' | 'ipv6', available_ips: { ipv4: PrimaryIP[]; ipv6: PrimaryIP[]; }): number | boolean
 {
+	for(const available_ip of available_ips[type])
+	{
+		if(available_ip.ip === ip)
+		{
+			return available_ip.id;
+		}
+	}
+
+	return false;
+}
+
+export async function determine_preselected_config(server?: Server, location?: string)
+{
+	if(!location)
+	{
+		location = 'fsn1';
+	}
+
 	try
 	{
-		let location;
 		let type;
 		let ssh_keys;
 		let ipv4;
@@ -508,6 +525,16 @@ export function determine_preselected_config(server?: Server)
 			{
 				ssh_keys = hetzner_config.ssh_keys;
 			}
+		}
+
+		const available_ips = await load_available_ips(location);
+		if(!ipv4 || !get_ip_id(ipv4, 'ipv4', available_ips))
+		{
+			ipv4 = undefined;
+		}
+		if(!ipv6 || !get_ip_id(ipv6, 'ipv6', available_ips))
+		{
+			ipv6 = undefined;
 		}
 
 		return { location, type, ssh_keys, ipv4, ipv6 };
