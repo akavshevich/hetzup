@@ -3,7 +3,7 @@ import { ArkErrors, type } from "arktype";
 
 import { read_hetzner_config } from "./configs";
 import { log_error, error_to_string, if_null_then_undefined } from "./utils";
-import { NewServerDetails, PrimaryIP, Server } from "./types";
+import { NewServerDetails, PrimaryIP, Server, ServerType } from "./types";
 
 const APIResponse = type.or({"successful": "true", "response": "object"}, {"successful": "false", "error": "string"});
 type APIResponse = typeof APIResponse.infer;
@@ -232,16 +232,6 @@ export async function get_snapshots(): Promise<{id: number, name: string, date: 
 	}
 }
 
-type ServerType =
-{
-	name: string, 
-	cores: number, 
-	memory: number,
-	disk: number,
-	hourly_price: number,
-	monthly_price: number
-}
-
 const ServerTypesAPIStructure = type(
 	{
 		server_types: 
@@ -250,13 +240,13 @@ const ServerTypesAPIStructure = type(
 			cores: "number", 
 			memory: "number",
 			disk: "number",
-			prices: type({location: "string", price_hourly: {gross: "number"}, price_monthly: {gross: "number"}}, "[]")
+			prices: type({location: "string", price_hourly: {gross: "string"}, price_monthly: {gross: "string"}}, "[]")
 		}, "[]")
 	}
 );
 type ServerTypesAPIStructure = typeof ServerTypesAPIStructure.infer;
 
-export async function get_available_server_types(): Promise<ServerType[]>
+export async function get_available_server_types(location?: string): Promise<ServerType[]>
 {
 	const call = await call_hetzner_api('server_types', 'GET');
 
@@ -268,12 +258,15 @@ export async function get_available_server_types(): Promise<ServerType[]>
 			throw new Error('Unexpected API response for server type list: ' + response.summary);
 		}
 
-		const hetzner_config = read_hetzner_config();
-
-		let preferred_location = 'fsn1';
-		if(hetzner_config && hetzner_config.preferred_location && hetzner_config.preferred_location !== '')
+		if(!location)
 		{
-			preferred_location = hetzner_config.preferred_location;
+			location = 'fsn1';
+			const hetzner_config = read_hetzner_config();
+
+			if(hetzner_config && hetzner_config.preferred_location && hetzner_config.preferred_location !== '')
+			{
+				location = hetzner_config.preferred_location;
+			}
 		}
 
 		const server_types = [];
@@ -282,12 +275,12 @@ export async function get_available_server_types(): Promise<ServerType[]>
 			let hourly_price = 0;
 			let monthly_price = 0;
 
-			for (const location of server_type.prices)
+			for (const server_location of server_type.prices)
 			{
-				if(location.location === preferred_location)
+				if(server_location.location === location)
 				{
-					hourly_price = location.price_hourly.gross;
-					monthly_price = location.price_monthly.gross;
+					hourly_price = +server_location.price_hourly.gross;
+					monthly_price = +server_location.price_monthly.gross;
 				}
 			}
 

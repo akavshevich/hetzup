@@ -592,18 +592,37 @@ export async function decide_to_keep_ips(server: Server): Promise<{ ipv4: boolea
 export async function new_server_confirmation(new_server_config: NewServerConfig)
 {
 	let ipv4 = 'new';
-	let ipv4_display = 'Assign new';
+	let ipv4_display = 'assign new';
 
 	let ipv6 = 'new';
-	let ipv6_display = 'Assign new';
+	let ipv6_display = 'assign new';
 
 	if(new_server_config.ipv4)
 	{
-
+		if(new_server_config.ipv4 === 'none')
+		{
+			ipv4 = 'none';
+			ipv4_display = 'none';
+		}
+		else
+		{
+			ipv4 = new_server_config.ipv4;
+			ipv4_display = new_server_config.ipv4;
+		}
 	}
+
 	if(new_server_config.ipv6)
 	{
-
+		if(new_server_config.ipv6 === 'none')
+		{
+			ipv6 = 'none';
+			ipv6_display = 'none';
+		}
+		else
+		{
+			ipv6 = new_server_config.ipv6;
+			ipv6_display = new_server_config.ipv6;
+		}
 	}
 
 	const available_changes: SelectInquiryOptions =
@@ -613,7 +632,7 @@ export async function new_server_confirmation(new_server_config: NewServerConfig
 		{name: `Location: [${chalk.green(new_server_config.location)}]`, value: 'location'},
 		{name: `Type: [${chalk.green(new_server_config.type)}]`, value: 'type'},
 		{name: `SSH keys: [${chalk.green(new_server_config.ssh_keys.join(', '))}]`, value: 'ssh_keys'},
-		// {name: `IPv4: [${chalk.green(new_server_config.type)}]`, value: 'ip'},
+		{name: `IPv4: [${chalk.green(ipv4_display)}] IPv6: [${chalk.green(ipv6_display)}]`, value: 'ip'},
 		new Separator(),
 		{name: 'Cancel', value: 0}
 	];

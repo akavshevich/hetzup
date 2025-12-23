@@ -20,7 +20,7 @@ export type NewServerDetails = {id: number, ipv4?: string, ipv6?: string, status
 
 export type NewServerConfig = 
 {
-	name: string | number,
+	name?: string | number,
 	snapshot_id?: number,
 	location: string,
 	type: string,
@@ -39,3 +39,13 @@ export type PrimaryIP =
 	location: string,
 	auto_delete: boolean
 };
+
+export type ServerType =
+{
+	name: string, 
+	cores: number, 
+	memory: number,
+	disk: number,
+	hourly_price: number,
+	monthly_price: number
+}

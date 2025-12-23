@@ -1,11 +1,11 @@
-import { get_select_response, select_ips, select_server, show_server_actions, show_snapshots } from './lib/interaction';
+import { get_select_response, new_server_confirmation, select_ips, select_server, show_server_actions, show_snapshots } from './lib/interaction';
 import { read_hetzner_config, read_server_config, update_hetzner_config, update_server_config } from './lib/configs';
 import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, delete_server, delete_snapshot, rebuild_server_from_image, get_locations, get_ssh_keys, get_primary_ips, change_ip_auto_delete_status } from './lib/api_calls';
 
 import select, { Separator } from '@inquirer/select';
 import chalk from 'chalk';
 import readline from 'readline';
-import { complete_server_removal, delete_ip, delete_snapshot_visual, determine_preselected_config, generate_server_list, load_available_ips, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server } from './lib/server_actions';
+import { complete_server_removal, delete_ip, delete_snapshot_visual, determine_preselected_config, generate_server_list, load_available_ips, load_available_server_types, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server } from './lib/server_actions';
 import { main } from './lib/ui_flow';
 
 console.log('');
@@ -41,10 +41,10 @@ async function test()
 		// const server_types = await get_available_server_types();
 		// console.log(server_types.length);
 
-		const server_list = await generate_server_list();
+		// const server_list = await generate_server_list();
 		// console.log(server_list);
 
-		const selected_server = await select_server(server_list);
+		// const selected_server = await select_server(server_list);
 		// console.log(server_list.get(selected_server.name));
 
 		// const chosen_action = await show_server_actions(selected_server);
@@ -62,10 +62,10 @@ async function test()
 		// await delete_snapshot_visual(snapshot);
 		// console.log(snapshot, 'deleted');
 
-		if(!selected_server)
-		{
-			return;
-		}
+		// if(!selected_server)
+		// {
+		// 	return;
+		// }
 
 		// const snapshot_id = await show_snapshots(selected_server);
 
@@ -87,7 +87,10 @@ async function test()
 		// 	await delete_ip(ip);
 		// }
 
-		console.log(await determine_preselected_config(selected_server));
+		// const preselected_config = await determine_preselected_config(selected_server);
+		// await new_server_confirmation(preselected_config)
+		const available_server_types = await load_available_server_types('ash');
+		console.log(available_server_types.length);
 	}
 	catch (error)
 	{

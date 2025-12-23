@@ -3,7 +3,7 @@ import ora from 'ora';
 import { read_hetzner_config, read_server_config, update_server_config } from './configs';
 import { log_error, error_to_string, sleep, format_date } from "./utils";
 import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image, get_primary_ips, delete_primary_ip, change_ip_auto_delete_status } from './api_calls';
-import { NewServerDetails, PrimaryIP, Server, ServerList } from './types';
+import { NewServerDetails, PrimaryIP, Server, ServerList, ServerType } from './types';
 import { show_info } from './interaction';
 import chalk from 'chalk';
 
@@ -470,6 +470,22 @@ export function get_ip_id(ip: string, type: 'ipv4' | 'ipv6', available_ips: { ip
 	}
 
 	return false;
+}
+
+export async function load_available_server_types(location: string): Promise<ServerType[]>
+{
+	const spinner = ora({text: `Loading available server types...`, spinner: 'point', color: 'cyan'}).start();
+	try
+	{
+		const server_types = await get_available_server_types(location);
+		spinner.stop();
+		return server_types;
+	}
+	catch (error)
+	{
+		spinner.stop();
+		throw new Error(error_to_string(error));
+	}
 }
 
 export async function determine_preselected_config(server?: Server, location?: string)
