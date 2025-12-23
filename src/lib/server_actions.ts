@@ -1,6 +1,6 @@
 import ora from 'ora';
 
-import { read_server_config, update_server_config } from './configs';
+import { read_hetzner_config, read_server_config, update_server_config } from './configs';
 import { log_error, error_to_string, sleep, format_date } from "./utils";
 import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image, get_primary_ips, delete_primary_ip, change_ip_auto_delete_status } from './api_calls';
 import { NewServerDetails, PrimaryIP, Server, ServerList } from './types';
@@ -80,7 +80,7 @@ export async function generate_server_list(): Promise< ServerList >
 
 		if(existing_server.status === 'inactive')
 		{
-			updated_server_details.id = snapshot.id; // Hetzner sorts the snapshots from oldest to newest, that way the latest will be here
+			updated_server_details.id = snapshot.id; // Hetzner sorts snapshots from oldest to newest, that way the latest will be here
 			updated_server_details.disk = snapshot.disk;
 		}
 		else
@@ -436,6 +436,84 @@ export async function update_ip_retention_policy(server: Server, keep_ipv4: bool
 	catch (error)
 	{
 		spinner.stop();
+		throw new Error(error_to_string(error));
+	}
+}
+
+export function read_config_for_server(server: Server)
+{
+	const server_config = read_server_config();
+	if(!server_config)
+	{
+		return false;
+	}
+
+	for(const server_details of server_config.servers)
+	{
+		if(server_details.name === server.name)
+		{
+			return server_details;
+		}
+	}
+
+	return false;
+}
+
+export function determine_preselected_config(server?: Server)
+{
+	try
+	{
+		let location;
+		let type;
+		let ssh_keys;
+		let ipv4;
+		let ipv6;
+
+		if(server)
+		{
+			const saved_server_config = read_config_for_server(server);
+			if(saved_server_config)
+			{
+				if(saved_server_config.location)
+				{
+					location = saved_server_config.location;
+				}
+				if(saved_server_config.type)
+				{
+					type = saved_server_config.type;
+				}
+				if(saved_server_config.ssh_keys)
+				{
+					ssh_keys = saved_server_config.ssh_keys;
+				}
+				if(saved_server_config.ipv4)
+				{
+					ipv4 = saved_server_config.ipv4;
+				}
+				if(saved_server_config.ipv6)
+				{
+					ipv6 = saved_server_config.ipv6;
+				}
+			}
+		}
+
+		const hetzner_config = read_hetzner_config();
+		if(hetzner_config)
+		{
+			if(!location && hetzner_config.preferred_location)
+			{
+				location = hetzner_config.preferred_location;
+			}
+			if(!ssh_keys && hetzner_config.ssh_keys)
+			{
+				ssh_keys = hetzner_config.ssh_keys;
+			}
+		}
+
+		return { location, type, ssh_keys, ipv4, ipv6 };
+	}
+	catch (error)
+	{
 		throw new Error(error_to_string(error));
 	}
 }

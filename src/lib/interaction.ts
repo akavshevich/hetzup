@@ -88,6 +88,11 @@ export async function select_server(servers: ServerList): Promise< Server | fals
 		}
 	);
 
+	if(server_select_list.length === 0)
+	{
+		server_select_list.push({name: 'You have no servers', value: 0, disabled: true});
+	}
+
 	server_select_list.push(new Separator());
 	server_select_list.push({name: 'Back', value: 0});
 

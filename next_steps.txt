@@ -3,8 +3,11 @@ Implement server type choice
 Verify availability of the location/type combo before spin up attempt, show error if not
 Show the same error on Hetzner error 412
 Implement listing and choice of primary IPs before spinning up
+Save server config on spin up too (include SSH keys used)
 Add quick start / quick stop that reverses the latest inactivated / spun up server as a first main menu option
-
+Implement getting a list of OS images
+Implement default OS image config
+Add create new server UI
 
 DONE:
 Rewrite get_running_servers, move general logic to generic call_hetzner_api function
@@ -54,3 +57,4 @@ Implement primary IP deletion
 Add keep IP config option (yes/no/ask)
 Implement decision whether to keep IP on all interactions that delete server
 Implement updating IPs auto_delete status
+Determine appropriate pre-selected config for spinning up a server

@@ -16,7 +16,15 @@ type HetznerConfig = typeof HetznerConfig.infer;
 
 const ServerConfig = type(
 	{
-		"servers": type({ name: "string | number", "type?": "string", "ipv4?": "string", "ipv6?": "string", "location?": "string" }, "[]")
+		"servers": type(
+			{
+				name: "string | number", 
+				"type?": "string", 
+				"ipv4?": "string", 
+				"ipv6?": "string", 
+				"location?": "string",
+				"ssh_keys?": "string[]"
+			}, "[]")
 	}
 );
 type ServerConfig = typeof ServerConfig.infer;
