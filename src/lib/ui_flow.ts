@@ -1,6 +1,6 @@
 import ora from "ora";
-import { configure_api_key, select_ssh_keys, configure_ip_retention, select_location, confirm_dangerous, decide_to_keep_ips, select_server, show_config, show_error, show_main_menu, show_server_actions, show_snapshots } from "./interaction";
-import { complete_server_removal, delete_snapshot_visual, generate_server_list, get_snapshot_details, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server, update_ip_retention_policy } from "./server_actions";
+import { configure_api_key, select_ssh_keys, configure_ip_retention, select_location, confirm_dangerous, decide_to_keep_ips, select_server, show_config, show_error, show_main_menu, show_server_actions, show_snapshots, new_server_confirmation } from "./interaction";
+import { complete_server_removal, delete_snapshot_visual, determine_preselected_config, generate_server_list, get_snapshot_details, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server, update_ip_retention_policy } from "./server_actions";
 import { Server } from "./types";
 import { error_to_string, format_date, sleep } from "./utils";
 import { read_hetzner_config, update_hetzner_config } from "./configs";
@@ -104,7 +104,7 @@ export async function server_actions(server: Server, action: string | number | f
 				}
 
 				const ip_retention_decision = await decide_to_keep_ips(server);
-				await update_ip_retention_policy(server, ip_retention_decision.ipv4, ip_retention_decision.ipv4);
+				await update_ip_retention_policy(server, ip_retention_decision.ipv4, ip_retention_decision.ipv6);
 
 				await stop_server(server, action);
 				main('servers');
@@ -118,7 +118,16 @@ export async function server_actions(server: Server, action: string | number | f
 
 			case 'spin_up_last':
 
-				await spin_up_from_snapshot(server, 'cpx11');
+				const preselected_config = await determine_preselected_config(server);
+				const confirmed_config = await new_server_confirmation(preselected_config, preselected_config.available_ips);
+
+				if(!confirmed_config)
+				{
+					server_actions(server);
+					return;
+				}
+
+				await spin_up_from_snapshot(server, confirmed_config.type, confirmed_config.location);
 				main('servers');
 				return;
 
@@ -137,7 +146,16 @@ export async function server_actions(server: Server, action: string | number | f
 
 				if(action === 'spin_up_select')
 				{
-					await spin_up_from_snapshot(server, 'cpx11', false, snapshot_id);
+					const preselected_config = await determine_preselected_config(server);
+					const confirmed_config = await new_server_confirmation(preselected_config, preselected_config.available_ips);
+
+					if(!confirmed_config)
+					{
+						server_actions(server);
+						return;
+					}
+
+					await spin_up_from_snapshot(server, confirmed_config.type, confirmed_config.location, false, snapshot_id);
 				}
 				else if(action === 'revert')
 				{
@@ -188,7 +206,7 @@ export async function server_actions(server: Server, action: string | number | f
 				if(confirm_delete_completely)
 				{
 					const ip_retention_decision = await decide_to_keep_ips(server);
-					await update_ip_retention_policy(server, ip_retention_decision.ipv4, ip_retention_decision.ipv4);
+					await update_ip_retention_policy(server, ip_retention_decision.ipv4, ip_retention_decision.ipv6);
 
 					await complete_server_removal(server);
 				}

@@ -198,7 +198,7 @@ export async function stop_server(server: Server, mode: 'save_stop' | 'stop' = '
 	}
 }
 
-export async function spin_up_from_snapshot(server: Server, type: string, latest: boolean = true, snapshot_id?: string | number): Promise< Server >
+export async function spin_up_from_snapshot(server: Server, type: string, location: string, latest: boolean = true, snapshot_id?: string | number): Promise< Server >
 {
 	if(server.status !== 'inactive')
 	{
@@ -213,7 +213,7 @@ export async function spin_up_from_snapshot(server: Server, type: string, latest
 	const spinner = ora({text: `Initializing ${server.name}...`, spinner: 'point', color: 'cyan'}).start();
 	try
 	{
-		const new_server_details = await spin_up_server(snapshot_id, server.name, type);
+		const new_server_details = await spin_up_server(snapshot_id, server.name, type, location);
 
 		return new Promise(
 			function (resolve)
@@ -573,7 +573,7 @@ export async function determine_preselected_config(server?: Server, location?: s
 			}
 		}
 
-		return { location, type, ssh_keys, ipv4, ipv6 };
+		return { location, type, ssh_keys, ipv4, ipv6, available_ips };
 	}
 	catch (error)
 	{

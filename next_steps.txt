@@ -1,5 +1,5 @@
-Before spinning up a server, show confirmation of the details: location, type, keys, IPs to use
 Implement server type choice
+Use selected IP config when spinning up a server
 Verify availability of the location/type combo before spin up attempt, show error if not
 Show the same error on Hetzner error 412
 Implement listing and choice of primary IPs before spinning up
@@ -60,3 +60,4 @@ Implement updating IPs auto_delete status
 Determine appropriate pre-selected config for spinning up a server
 Check if IPs are still available before offering them as a preselected option
 Modify location and SSH key selection config functions to also work just as selection UI
+Before spinning up a server, show confirmation of the details: location, type, keys, IPs to use

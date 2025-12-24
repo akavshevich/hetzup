@@ -153,7 +153,7 @@ export async function show_server_actions(server: Server): Promise<string | numb
 	server_actions_list.push(new Separator());
 	server_actions_list.push({name: 'Back', value: 0});
 
-	const selected_action =  await get_select_response(server.name + ':', server_actions_list);
+	const selected_action = await get_select_response(server.name + ':', server_actions_list);
 	if(selected_action === 0)
 	{
 		return false;
@@ -283,6 +283,12 @@ export async function configure_api_key()
 export async function select_location(save_preferred?: boolean)
 {
 	const spinner = ora({text: 'Loading available server locations...', spinner: 'boxBounce', color: 'cyan'}).start();
+	
+	let prompt = 'Select server location';
+	if(save_preferred)
+	{
+		prompt = 'Select preferred server location';
+	}
 
 	try
 	{
@@ -297,7 +303,7 @@ export async function select_location(save_preferred?: boolean)
 		location_options.push(new Separator());
 		location_options.push({name: 'Back', value: 0});
 
-		const selected_location = await get_select_response('Select preferred server location', location_options);
+		const selected_location = await get_select_response(prompt, location_options);
 
 		if(typeof selected_location !== 'string')
 		{
@@ -324,6 +330,12 @@ export async function select_ssh_keys(current_keys: string[], save_default?: boo
 {
 	const spinner = ora({text: 'Loading your SSH keys ...', spinner: 'boxBounce', color: 'cyan'}).start();
 
+	let prompt = 'Select SSH keys';
+	if(save_default)
+	{
+		prompt = 'Select default SSH keys';
+	}
+
 	try
 	{
 		const ssh_keys = await get_ssh_keys();
@@ -343,7 +355,7 @@ export async function select_ssh_keys(current_keys: string[], save_default?: boo
 		ssh_key_options.push(new Separator());
 		ssh_key_options.push({name: 'None', value: 0});
 
-		const selected_keys = await get_multi_choice_response('Select default SSH keys', ssh_key_options);
+		const selected_keys = await get_multi_choice_response(prompt, ssh_key_options);
 		let key_names: string[] = [];
 		for(const ssh_key of selected_keys)
 		{
@@ -599,7 +611,7 @@ export async function decide_to_keep_ips(server: Server): Promise<{ ipv4: boolea
 	return {ipv4: keep_ipv4, ipv6: keep_ipv6};
 }
 
-export async function new_server_confirmation(new_server_config: NewServerConfig)
+export async function new_server_confirmation(new_server_config: NewServerConfig, available_ips: { ipv4: PrimaryIP[]; ipv6: PrimaryIP[]; })
 {
 	let ipv4 = 'new';
 	let ipv4_display = 'assign new';
@@ -659,21 +671,31 @@ export async function new_server_confirmation(new_server_config: NewServerConfig
 			case 'no_changes':
 				return new_server_config;
 			case 'location':
+				const new_location = await select_location();
+				if(new_location)
+				{
+					new_server_config.location = new_location;
+				}
+				return await new_server_confirmation(new_server_config, available_ips);
 
-				break;
 			case 'type':
 
 				break;
 			case 'ssh_keys':
+				const ssh_keys = await select_ssh_keys(new_server_config.ssh_keys);
+				new_server_config.ssh_keys = ssh_keys;
+				return await new_server_confirmation(new_server_config, available_ips);
 
-				break;
 			case 'ip':
+				const selected_ips = await select_ips(available_ips, ipv4, ipv6);
+				new_server_config.ipv4 = selected_ips.ipv4;
+				new_server_config.ipv6 = selected_ips.ipv6;
+				return await new_server_confirmation(new_server_config, available_ips);
 
-				break;
 			default:
 				throw new Error('Unknown server config selection');
 		}
 
-		return await new_server_confirmation(new_server_config);
+		return await new_server_confirmation(new_server_config, available_ips);
 	}
 }
