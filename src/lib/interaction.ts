@@ -280,7 +280,7 @@ export async function configure_api_key()
 	}
 }
 
-export async function configure_preferred_location()
+export async function select_location(save_preferred?: boolean)
 {
 	const spinner = ora({text: 'Loading available server locations...', spinner: 'boxBounce', color: 'cyan'}).start();
 
@@ -304,7 +304,12 @@ export async function configure_preferred_location()
 			return;
 		}
 
-		update_hetzner_config({preferred_location: selected_location});
+		if(save_preferred)
+		{
+			update_hetzner_config({preferred_location: selected_location});
+		}
+
+		return selected_location;
 	}
 	catch(error)
 	{
@@ -315,7 +320,7 @@ export async function configure_preferred_location()
 
 type MultiChoiceInquiryOptions = SelectInquiryOptions & {checked?: boolean};
 
-export async function configure_default_ssh_keys(current_keys: string[])
+export async function select_ssh_keys(current_keys: string[], save_default?: boolean)
 {
 	const spinner = ora({text: 'Loading your SSH keys ...', spinner: 'boxBounce', color: 'cyan'}).start();
 
@@ -350,7 +355,12 @@ export async function configure_default_ssh_keys(current_keys: string[])
 			key_names.push(ssh_key);
 		}
 
-		update_hetzner_config({ssh_keys: key_names});
+		if(save_default)
+		{
+			update_hetzner_config({ssh_keys: key_names});
+		}
+
+		return key_names;
 	}
 	catch(error)
 	{
@@ -642,6 +652,28 @@ export async function new_server_confirmation(new_server_config: NewServerConfig
 	{
 		return false;
 	}
+	else
+	{
+		switch (change_selected)
+		{
+			case 'no_changes':
+				return new_server_config;
+			case 'location':
 
-	return change_selected;
+				break;
+			case 'type':
+
+				break;
+			case 'ssh_keys':
+
+				break;
+			case 'ip':
+
+				break;
+			default:
+				throw new Error('Unknown server config selection');
+		}
+
+		return await new_server_confirmation(new_server_config);
+	}
 }

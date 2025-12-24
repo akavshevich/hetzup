@@ -59,3 +59,4 @@ Implement decision whether to keep IP on all interactions that delete server
 Implement updating IPs auto_delete status
 Determine appropriate pre-selected config for spinning up a server
 Check if IPs are still available before offering them as a preselected option
+Modify location and SSH key selection config functions to also work just as selection UI

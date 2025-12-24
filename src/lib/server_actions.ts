@@ -492,13 +492,20 @@ export async function determine_preselected_config(server?: Server, location?: s
 {
 	if(!location)
 	{
-		location = 'fsn1';
+		if(server && server.location)
+		{
+			location = server.location;
+		}
+		else
+		{
+			location = 'fsn1';
+		}
 	}
 
 	try
 	{
 		let type;
-		let ssh_keys;
+		let ssh_keys: string[] = [];
 		let ipv4;
 		let ipv6;
 
@@ -537,7 +544,7 @@ export async function determine_preselected_config(server?: Server, location?: s
 			{
 				location = hetzner_config.preferred_location;
 			}
-			if(!ssh_keys && hetzner_config.ssh_keys)
+			if(ssh_keys.length === 0 && hetzner_config.ssh_keys)
 			{
 				ssh_keys = hetzner_config.ssh_keys;
 			}
@@ -551,6 +558,19 @@ export async function determine_preselected_config(server?: Server, location?: s
 		if(!ipv6 || !get_ip_id(ipv6, 'ipv6', available_ips))
 		{
 			ipv6 = undefined;
+		}
+
+		if(!type)
+		{
+			const available_server_types = await load_available_server_types(location);
+			if(available_server_types.length > 0)
+			{
+				type = available_server_types[0].name;
+			}
+			else
+			{
+				type = 'cx23';
+			}
 		}
 
 		return { location, type, ssh_keys, ipv4, ipv6 };
