@@ -2,7 +2,7 @@ import { clear_prompt, error_to_string, format_date, round_to_precision } from '
 import select from '@inquirer/select';
 import input from '@inquirer/input';
 import { checkbox, Separator } from '@inquirer/prompts';
-import { NewServerConfig, PrimaryIP, Server, ServerList } from './types';
+import { NewServerConfig, PrimaryIP, Server, ServerList, ServerType } from './types';
 import chalk from 'chalk';
 import { read_hetzner_config, update_hetzner_config } from './configs';
 import { call_hetzner_api, get_locations, get_running_servers, get_ssh_keys } from './api_calls';
@@ -611,7 +611,35 @@ export async function decide_to_keep_ips(server: Server): Promise<{ ipv4: boolea
 	return {ipv4: keep_ipv4, ipv6: keep_ipv6};
 }
 
-export async function new_server_confirmation(new_server_config: NewServerConfig, available_ips: { ipv4: PrimaryIP[]; ipv6: PrimaryIP[]; })
+export async function select_server_type(server_types: ServerType[])
+{
+	const server_options: SelectInquiryOptions = [];
+	for(const server_type of server_types)
+	{
+		server_options.push(
+			{
+				name: `[${chalk.green(server_type.name)}]: ${server_type.cores} Cores ${server_type.memory}GB ${server_type.disk}GB ${round_to_precision(server_type.monthly_price, 2)}/month`, 
+				value: server_type.name
+			}
+		);
+	}
+
+	server_options.push(new Separator());
+	server_options.push({name: 'Back', value: 0});
+
+	const selected_server_type = await get_select_response('Select server type', server_options);
+	if(typeof selected_server_type !== 'string')
+	{
+		return false;
+	}
+	
+	return selected_server_type;
+}
+
+export async function new_server_confirmation(
+						new_server_config: NewServerConfig, 
+						available_ips: { ipv4: PrimaryIP[]; ipv6: PrimaryIP[]; },
+						available_server_types: ServerType[])
 {
 	let ipv4 = 'new';
 	let ipv4_display = 'assign new';
@@ -676,26 +704,29 @@ export async function new_server_confirmation(new_server_config: NewServerConfig
 				{
 					new_server_config.location = new_location;
 				}
-				return await new_server_confirmation(new_server_config, available_ips);
+				return await new_server_confirmation(new_server_config, available_ips, available_server_types);
 
 			case 'type':
+				const new_type = await select_server_type(available_server_types);
+				if(new_type)
+				{
+					new_server_config.type = new_type;
+				}
+				return await new_server_confirmation(new_server_config, available_ips, available_server_types);
 
-				break;
 			case 'ssh_keys':
 				const ssh_keys = await select_ssh_keys(new_server_config.ssh_keys);
 				new_server_config.ssh_keys = ssh_keys;
-				return await new_server_confirmation(new_server_config, available_ips);
+				return await new_server_confirmation(new_server_config, available_ips, available_server_types);
 
 			case 'ip':
 				const selected_ips = await select_ips(available_ips, ipv4, ipv6);
 				new_server_config.ipv4 = selected_ips.ipv4;
 				new_server_config.ipv6 = selected_ips.ipv6;
-				return await new_server_confirmation(new_server_config, available_ips);
+				return await new_server_confirmation(new_server_config, available_ips, available_server_types);
 
 			default:
 				throw new Error('Unknown server config selection');
 		}
-
-		return await new_server_confirmation(new_server_config, available_ips);
 	}
 }

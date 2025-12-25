@@ -560,9 +560,9 @@ export async function determine_preselected_config(server?: Server, location?: s
 			ipv6 = undefined;
 		}
 
+		const available_server_types = await load_available_server_types(location);
 		if(!type)
 		{
-			const available_server_types = await load_available_server_types(location);
 			if(available_server_types.length > 0)
 			{
 				type = available_server_types[0].name;
@@ -573,7 +573,7 @@ export async function determine_preselected_config(server?: Server, location?: s
 			}
 		}
 
-		return { location, type, ssh_keys, ipv4, ipv6, available_ips };
+		return { location, type, ssh_keys, ipv4, ipv6, available_ips, available_server_types };
 	}
 	catch (error)
 	{

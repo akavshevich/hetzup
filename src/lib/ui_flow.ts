@@ -119,7 +119,10 @@ export async function server_actions(server: Server, action: string | number | f
 			case 'spin_up_last':
 
 				const preselected_config = await determine_preselected_config(server);
-				const confirmed_config = await new_server_confirmation(preselected_config, preselected_config.available_ips);
+				const confirmed_config = await new_server_confirmation(
+												preselected_config, 
+												preselected_config.available_ips, 
+												preselected_config.available_server_types);
 
 				if(!confirmed_config)
 				{
@@ -147,7 +150,10 @@ export async function server_actions(server: Server, action: string | number | f
 				if(action === 'spin_up_select')
 				{
 					const preselected_config = await determine_preselected_config(server);
-					const confirmed_config = await new_server_confirmation(preselected_config, preselected_config.available_ips);
+					const confirmed_config = await new_server_confirmation(
+								preselected_config, 
+								preselected_config.available_ips, 
+								preselected_config.available_server_types);
 
 					if(!confirmed_config)
 					{
