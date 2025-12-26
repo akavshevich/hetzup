@@ -130,7 +130,7 @@ export async function server_actions(server: Server, action: string | number | f
 					return;
 				}
 
-				await spin_up_from_snapshot(server, confirmed_config.type, confirmed_config.location);
+				await spin_up_from_snapshot(server, confirmed_config.type, confirmed_config.location, confirmed_config.ssh_keys);
 				main('servers');
 				return;
 
@@ -161,7 +161,7 @@ export async function server_actions(server: Server, action: string | number | f
 						return;
 					}
 
-					await spin_up_from_snapshot(server, confirmed_config.type, confirmed_config.location, false, snapshot_id);
+					await spin_up_from_snapshot(server, confirmed_config.type, confirmed_config.location, confirmed_config.ssh_keys, false, snapshot_id);
 				}
 				else if(action === 'revert')
 				{

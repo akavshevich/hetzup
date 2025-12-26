@@ -394,35 +394,21 @@ type SingleServerAPIStructure = typeof SingleServerAPIStructure.infer;
 const SingleServerAPIResponse = type.and(APIResponse, SingleServerAPIStructure);
 type SingleServerAPIResponse = typeof SingleServerAPIResponse.infer;
 
-export async function spin_up_server(image: string | number, name: string | number, server_type: string, location?: string): Promise< NewServerDetails >
+export async function spin_up_server(
+						image: string | number, 
+						name: string | number, 
+						server_type: string, 
+						location: string,
+						ssh_keys: string[]): Promise< NewServerDetails >
 {
-	const hetzner_config = read_hetzner_config();
-
-	let preferred_location = 'fsn1';
-	if(hetzner_config && hetzner_config.preferred_location && hetzner_config.preferred_location !== '')
-	{
-		preferred_location = hetzner_config.preferred_location;
-	}
-
-	let ssh_keys: string[] = [];
-	if(hetzner_config && hetzner_config.ssh_keys && hetzner_config.ssh_keys.length > 0)
-	{
-		ssh_keys = hetzner_config.ssh_keys;
-	}
-
 	const server_config = 
 	{
 		image: image,
 		name: name,
-		location: preferred_location,
+		location: location,
 		server_type: server_type,
 		ssh_keys: ssh_keys
 	};
-
-	if(location)
-	{
-		server_config.location = location;
-	}
 
 	const call = await call_hetzner_api('servers', 'POST', server_config);
 
