@@ -25,8 +25,8 @@ export type NewServerConfig =
 	location: string,
 	type: string,
 	ssh_keys: string[],
-	ipv4?: string, 
-	ipv6?: string,
+	ipv4: string, 
+	ipv6: string,
 };
 
 export type PrimaryIP = 

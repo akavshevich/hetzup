@@ -120,9 +120,9 @@ export async function server_actions(server: Server, action: string | number | f
 
 				const preselected_config = await determine_preselected_config(server);
 				const confirmed_config = await new_server_confirmation(
-												preselected_config, 
-												preselected_config.available_ips, 
-												preselected_config.available_server_types);
+					preselected_config, 
+					preselected_config.available_ips, 
+					preselected_config.available_server_types);
 
 				if(!confirmed_config)
 				{
@@ -130,7 +130,16 @@ export async function server_actions(server: Server, action: string | number | f
 					return;
 				}
 
-				await spin_up_from_snapshot(server, confirmed_config.type, confirmed_config.location, confirmed_config.ssh_keys);
+				await spin_up_from_snapshot(
+					server, 
+					confirmed_config.type, 
+					confirmed_config.location, 
+					confirmed_config.ssh_keys,
+					confirmed_config.ipv4,
+					confirmed_config.ipv6,
+					preselected_config.available_ips
+				);
+					
 				main('servers');
 				return;
 
@@ -151,9 +160,9 @@ export async function server_actions(server: Server, action: string | number | f
 				{
 					const preselected_config = await determine_preselected_config(server);
 					const confirmed_config = await new_server_confirmation(
-								preselected_config, 
-								preselected_config.available_ips, 
-								preselected_config.available_server_types);
+						preselected_config, 
+						preselected_config.available_ips, 
+						preselected_config.available_server_types);
 
 					if(!confirmed_config)
 					{
@@ -161,7 +170,17 @@ export async function server_actions(server: Server, action: string | number | f
 						return;
 					}
 
-					await spin_up_from_snapshot(server, confirmed_config.type, confirmed_config.location, confirmed_config.ssh_keys, false, snapshot_id);
+					await spin_up_from_snapshot(
+						server, 
+						confirmed_config.type, 
+						confirmed_config.location, 
+						confirmed_config.ssh_keys,
+						confirmed_config.ipv4,
+						confirmed_config.ipv6,
+						preselected_config.available_ips, 
+						false, 
+						snapshot_id
+					);
 				}
 				else if(action === 'revert')
 				{

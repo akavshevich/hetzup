@@ -203,8 +203,9 @@ export async function spin_up_from_snapshot(
 						type: string, 
 						location: string,
 						ssh_keys: string[], 
-						// ipv4_id: string | number,
-						// ipv6_id: string | number,
+						ipv4: string,
+						ipv6: string,
+						available_ips?: { ipv4: PrimaryIP[]; ipv6: PrimaryIP[]; },
 						latest: boolean = true, 
 						snapshot_id?: string | number): Promise< Server >
 {
@@ -218,10 +219,46 @@ export async function spin_up_from_snapshot(
 		snapshot_id = server.id;
 	}
 
+	const ip_config: { "enable_ipv4": boolean, "enable_ipv6": boolean, "ipv4": null | number, "ipv6": null | number } =
+	{
+		"enable_ipv4": false,
+		"enable_ipv6": false,
+		"ipv4": null,
+		"ipv6": null
+	};
+
+	if(ipv4 !== 'none' && available_ips)
+	{
+		ip_config.enable_ipv4 = true;
+
+		if(ipv4 !== 'new')
+		{
+			const ipv4_id = get_ip_id(ipv4, 'ipv4', available_ips);
+			if(typeof ipv4_id === 'number')
+			{
+				ip_config.ipv4 = ipv4_id;
+			}
+		}
+	}
+
+	if(ipv6 !== 'none' && available_ips)
+	{
+		ip_config.enable_ipv6 = true;
+
+		if(ipv6 !== 'new')
+		{
+			const ipv6_id = get_ip_id(ipv6, 'ipv6', available_ips);
+			if(typeof ipv6_id === 'number')
+			{
+				ip_config.ipv6 = ipv6_id;
+			}
+		}
+	}
+
 	const spinner = ora({text: `Initializing ${server.name}...`, spinner: 'point', color: 'cyan'}).start();
 	try
 	{
-		const new_server_details = await spin_up_server(snapshot_id, server.name, type, location, ssh_keys);
+		const new_server_details = await spin_up_server(snapshot_id, server.name, type, location, ssh_keys, ip_config);
 
 		return new Promise(
 			function (resolve)
@@ -579,6 +616,16 @@ export async function determine_preselected_config(server?: Server, location?: s
 			{
 				type = 'cx23';
 			}
+		}
+
+		if(!ipv4)
+		{
+			ipv4 = 'new';
+		}
+
+		if(!ipv6)
+		{
+			ipv6 = 'new';
 		}
 
 		return { location, type, ssh_keys, ipv4, ipv6, available_ips, available_server_types };

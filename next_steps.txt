@@ -1,5 +1,4 @@
 Show architecture when selecting server type
-Use selected IP config when spinning up a server
 Verify availability of the location/type combo before spin up attempt, show error if not
 Show the same error on Hetzner error 412
 Implement listing and choice of primary IPs before spinning up
@@ -64,3 +63,4 @@ Check if IPs are still available before offering them as a preselected option
 Modify location and SSH key selection config functions to also work just as selection UI
 Before spinning up a server, show confirmation of the details: location, type, keys, IPs to use
 Use selected SSH keys
+Use selected IP config when spinning up a server

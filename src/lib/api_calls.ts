@@ -399,7 +399,9 @@ export async function spin_up_server(
 						name: string | number, 
 						server_type: string, 
 						location: string,
-						ssh_keys: string[]): Promise< NewServerDetails >
+						ssh_keys: string[],
+						ip_config: { "enable_ipv4": boolean, "enable_ipv6": boolean, "ipv4": null | number, "ipv6": null | number }): 
+						Promise< NewServerDetails >
 {
 	const server_config = 
 	{
@@ -407,7 +409,8 @@ export async function spin_up_server(
 		name: name,
 		location: location,
 		server_type: server_type,
-		ssh_keys: ssh_keys
+		ssh_keys: ssh_keys,
+		public_net: ip_config
 	};
 
 	const call = await call_hetzner_api('servers', 'POST', server_config);
