@@ -616,9 +616,15 @@ export async function select_server_type(server_types: ServerType[])
 	const server_options: SelectInquiryOptions = [];
 	for(const server_type of server_types)
 	{
+		let architecture = chalk.blue(server_type.architecture);
+		if(server_type.architecture === 'arm')
+		{
+			architecture = chalk.red(server_type.architecture);
+		}
+
 		server_options.push(
 			{
-				name: `[${chalk.green(server_type.name)}]: ${server_type.cores} Cores ${server_type.memory}GB ${server_type.disk}GB ${round_to_precision(server_type.monthly_price, 2)}/month`, 
+				name: `[${chalk.green(server_type.name)}]: ${architecture} ${server_type.cores} Cores ${server_type.memory}GB ${server_type.disk}GB ${round_to_precision(server_type.monthly_price, 2)}/month`, 
 				value: server_type.name
 			}
 		);

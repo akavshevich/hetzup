@@ -47,5 +47,6 @@ export type ServerType =
 	memory: number,
 	disk: number,
 	hourly_price: number,
-	monthly_price: number
+	monthly_price: number,
+	architecture: 'x86' | 'arm'
 }

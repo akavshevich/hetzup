@@ -240,6 +240,7 @@ const ServerTypesAPIStructure = type(
 			cores: "number", 
 			memory: "number",
 			disk: "number",
+			architecture: "'x86' | 'arm'",
 			prices: type({location: "string", price_hourly: {gross: "string"}, price_monthly: {gross: "string"}}, "[]")
 		}, "[]")
 	}
@@ -295,6 +296,7 @@ export async function get_available_server_types(location?: string): Promise<Ser
 					cores: server_type.cores, 
 					memory: server_type.memory,
 					disk: server_type.disk,
+					architecture: server_type.architecture,
 					hourly_price: hourly_price,
 					monthly_price: monthly_price
 				}
