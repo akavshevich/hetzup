@@ -1,5 +1,3 @@
-Verify availability of the location/type combo before spin up attempt, show error if not
-Show the same error on Hetzner error 412
 Implement listing and choice of primary IPs before spinning up
 Save server config on spin up too (include SSH keys used)
 Add quick start / quick stop that reverses the latest inactivated / spun up server as a first main menu option
@@ -65,3 +63,4 @@ Use selected SSH keys
 Use selected IP config when spinning up a server
 Show architecture when selecting server type
 Add architecture to snapshot data, only list architecture supported by that snapshot
+Show error message returned by Hetzner instead of generic Axios error if available

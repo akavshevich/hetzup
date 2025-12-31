@@ -3,7 +3,15 @@ import { AxiosError } from "axios";
 
 export function log_error(error: unknown)
 {
-	if (error instanceof Error)
+	if(error instanceof AxiosError)
+	{
+		if(error.response?.data.error.message)
+		{
+			console.log(error.status + ': ' + error.response?.data.error.message);
+		}
+		console.log(error.status + ': ' + error.message);
+	}
+	else if (error instanceof Error)
 	{
 		console.log("Error: ", error.message);
 	} 
@@ -23,8 +31,12 @@ export function log_error(error: unknown)
 
 export function error_to_string(error: unknown): string
 {
-	if (error instanceof AxiosError)
+	if(error instanceof AxiosError)
 	{
+		if(error.response?.data.error.message)
+		{
+			return error.status + ': ' + error.response?.data.error.message;
+		}
 		return error.status + ': ' + error.message;
 	}
 	else if (error instanceof Error)

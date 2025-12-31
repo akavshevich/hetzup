@@ -4,6 +4,7 @@ import { ArkErrors, type } from "arktype";
 import { read_hetzner_config } from "./configs";
 import { log_error, error_to_string, if_null_then_undefined } from "./utils";
 import { NewServerDetails, PrimaryIP, Server, ServerType } from "./types";
+import { AxiosError } from 'axios';
 
 const APIResponse = type.or({"successful": "true", "response": "object"}, {"successful": "false", "error": "string"});
 type APIResponse = typeof APIResponse.infer;
