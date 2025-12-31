@@ -3,7 +3,7 @@ import ora from 'ora';
 import { read_hetzner_config, read_server_config, update_server_config } from './configs';
 import { log_error, error_to_string, sleep, format_date } from "./utils";
 import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image, get_primary_ips, delete_primary_ip, change_ip_auto_delete_status } from './api_calls';
-import { NewServerDetails, PrimaryIP, Server, ServerList, ServerType } from './types';
+import { NewServerConfig, NewServerDetails, PrimaryIP, Server, ServerList, ServerType } from './types';
 import { show_info } from './interaction';
 import chalk from 'chalk';
 
@@ -144,47 +144,13 @@ export async function stop_server(server: Server, mode: 'save_stop' | 'stop' = '
 	{
 		if(mode === 'save_stop')
 		{
-			let current_server_config = read_server_config();
-			
-			if(current_server_config)
-			{
-				let server_in_config = false;
-				for(const index in current_server_config.servers)
-				{
-					if(current_server_config.servers[index].name === server.name)
-					{
-						current_server_config.servers[index].type = server.type;
-						current_server_config.servers[index].ipv4 = server.ipv4;
-						current_server_config.servers[index].ipv6 = server.ipv6;
-						current_server_config.servers[index].location = server.location;
-						server_in_config = true;
-					}
-				}
-
-				if(!server_in_config)
-				{
-					current_server_config.servers.push(
-						{
-							name: server.name, 
-							type: server.type, 
-							ipv4: server.ipv4, 
-							ipv6: server.ipv6, 
-							location: server.location
-						}
-					);
-				}
-			}
-			else
-			{
-				current_server_config = 
-				{
-					servers: [{name: server.name, type: server.type, ipv4: server.ipv4, ipv6: server.ipv6, location: server.location}]
-				};
-			}
-
-			update_server_config(current_server_config);
-
 			await save_server_to_snapshot(server);
+			
+			try
+			{
+				update_config_for_server(server);
+			}
+			catch{}
 		}
 
 		stop_server_spinner.start();
@@ -283,6 +249,32 @@ export async function spin_up_from_snapshot(
 
 						clearInterval(check_on_server);
 						spinner.stop();
+
+						if(server_details.ips.ipv4)
+						{
+							ipv4 = server_details.ips.ipv4.ip;
+						}
+
+						if(server_details.ips.ipv6)
+						{
+							ipv6 = server_details.ips.ipv6.ip;
+						}
+
+						try
+						{
+							update_config_for_server(
+								server, 
+								{
+									name: server_details.name, 
+									location: server_details.location, 
+									type: server_details.type,
+									ssh_keys: ssh_keys,
+									ipv4,
+									ipv6,
+								}
+							);
+						}
+						catch{}
 
 						if(new_server_details.root_password)
 						{
@@ -640,4 +632,117 @@ export async function determine_preselected_config(server?: Server, location?: s
 	{
 		throw new Error(error_to_string(error));
 	}
+}
+
+export function update_config_for_server(server: Server, new_config?: NewServerConfig)
+{
+	let current_server_config = read_server_config();
+
+	const empty_keys: string[] = [];
+	if(current_server_config)
+	{
+		let server_in_config = false;
+		for(const index in current_server_config.servers)
+		{
+			if(new_config)
+			{
+				if(current_server_config.servers[index].name === new_config.name)
+				{
+					current_server_config.servers[index].type = new_config.type;
+
+					if(new_config.ipv4 !== 'new' && new_config.ipv6 !== 'none')
+					{
+						current_server_config.servers[index].ipv4 = new_config.ipv4;
+					}
+					if(new_config.ipv6 !== 'new' && new_config.ipv6 !== 'none')
+					{
+						current_server_config.servers[index].ipv6 = new_config.ipv6;
+					}
+
+					current_server_config.servers[index].location = new_config.location;
+					current_server_config.servers[index].ssh_keys = new_config.ssh_keys;
+					server_in_config = true;
+				}
+			}
+			else
+			{
+				if(current_server_config.servers[index].name === server.name)
+				{
+					current_server_config.servers[index].type = server.type;
+					current_server_config.servers[index].ipv4 = server.ipv4;
+					current_server_config.servers[index].ipv6 = server.ipv6;
+					current_server_config.servers[index].location = server.location;
+					server_in_config = true;
+				}
+			}
+		}
+
+		if(!server_in_config)
+		{
+			const new_server = 
+			{
+				name: server.name,
+				type: server.type,
+				ipv4: server.ipv4,
+				ipv6: server.ipv6,
+				location: server.location,
+				ssh_keys: empty_keys
+			};
+
+			if(new_config)
+			{
+				new_server.type = new_config.type;
+
+				if(new_config.ipv4 !== 'new' && new_config.ipv6 !== 'none')
+				{
+					new_server.ipv4 = new_config.ipv4;
+				}
+				if(new_config.ipv6 !== 'new' && new_config.ipv6 !== 'none')
+				{
+					new_server.ipv6 = new_config.ipv6;
+				}
+
+				new_server.location = new_config.location;
+				new_server.ssh_keys = new_config.ssh_keys;
+			}
+
+			current_server_config.servers.push(new_server);
+		}
+	}
+	else
+	{
+		const new_server = 
+		{ 
+			name: server.name, 
+			type: server.type, 
+			ipv4: server.ipv4, 
+			ipv6: server.ipv6, 
+			location: server.location,
+			ssh_keys: empty_keys
+		};
+
+			if(new_config)
+			{
+				new_server.type = new_config.type;
+
+				if(new_config.ipv4 !== 'new' && new_config.ipv6 !== 'none')
+				{
+					new_server.ipv4 = new_config.ipv4;
+				}
+				if(new_config.ipv6 !== 'new' && new_config.ipv6 !== 'none')
+				{
+					new_server.ipv6 = new_config.ipv6;
+				}
+
+				new_server.location = new_config.location;
+				new_server.ssh_keys = new_config.ssh_keys;
+			}
+
+		current_server_config = 
+		{
+			servers: [new_server]
+		};
+	}
+
+	update_server_config(current_server_config);
 }

@@ -487,6 +487,7 @@ export async function get_server(server_id: number)
 		{
 			id: server.id,
 			name: server.name,
+			type: server.server_type.name,
 			cores: server.server_type.cores,
 			disk: server.server_type.disk,
 			memory: server.server_type.memory,

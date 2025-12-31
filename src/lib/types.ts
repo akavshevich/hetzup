@@ -20,7 +20,7 @@ export type NewServerDetails = {id: number, ipv4?: string, ipv6?: string, status
 
 export type NewServerConfig = 
 {
-	name?: string | number,
+	name: string | number,
 	snapshot_id?: number,
 	location: string,
 	type: string,

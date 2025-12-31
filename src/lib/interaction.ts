@@ -643,7 +643,7 @@ export async function select_server_type(server_types: ServerType[])
 }
 
 export async function new_server_confirmation(
-						new_server_config: NewServerConfig, 
+						new_server_config: Omit<NewServerConfig, 'name'>, 
 						available_ips: { ipv4: PrimaryIP[]; ipv6: PrimaryIP[]; },
 						available_server_types: ServerType[])
 {
