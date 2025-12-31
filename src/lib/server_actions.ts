@@ -60,7 +60,7 @@ export async function generate_server_list(): Promise< ServerList >
 					id: snapshot.id, 
 					name: snapshot.name, 
 					status: 'inactive', 
-					snapshots: [{id: snapshot.id, date: snapshot.date, disk: snapshot.disk}], disk: snapshot.disk}
+					snapshots: [{id: snapshot.id, date: snapshot.date, disk: snapshot.disk, architecture: snapshot.architecture}], disk: snapshot.disk}
 			);
 			continue;
 		}
@@ -70,7 +70,7 @@ export async function generate_server_list(): Promise< ServerList >
 			id: existing_server.id,
 			name: existing_server.name,
 			status: existing_server.status, 
-			snapshots: [...existing_server.snapshots, {id: snapshot.id, date: snapshot.date, disk: snapshot.disk}],
+			snapshots: [...existing_server.snapshots, {id: snapshot.id, date: snapshot.date, disk: snapshot.disk, architecture: snapshot.architecture}],
 			disk: existing_server.disk,
 			type: existing_server.type,
 			ipv4: existing_server.ipv4, 
@@ -517,12 +517,12 @@ export function get_ip_id(ip: string, type: 'ipv4' | 'ipv6', available_ips: { ip
 	return false;
 }
 
-export async function load_available_server_types(location: string): Promise<ServerType[]>
+export async function load_available_server_types(location: string, architecture?: 'x86' | 'arm'): Promise<ServerType[]>
 {
 	const spinner = ora({text: `Loading available server types...`, spinner: 'point', color: 'cyan'}).start();
 	try
 	{
-		const server_types = await get_available_server_types(location);
+		const server_types = await get_available_server_types(location, architecture);
 		spinner.stop();
 		return server_types;
 	}
@@ -605,7 +605,13 @@ export async function determine_preselected_config(server?: Server, location?: s
 			ipv6 = undefined;
 		}
 
-		const available_server_types = await load_available_server_types(location);
+		let architecture;
+		if(server && server.snapshots.length > 0)
+		{
+			architecture = server.snapshots[0].architecture;
+		}
+
+		const available_server_types = await load_available_server_types(location, architecture);
 		if(!type)
 		{
 			if(available_server_types.length > 0)

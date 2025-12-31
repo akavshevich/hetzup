@@ -5,7 +5,7 @@ export type Server =
 	id: number,
 	name: string | number,
 	status: ServerStatuses, 
-	snapshots: {id: number, date: string, disk: number}[],
+	snapshots: {id: number, date: string, disk: number, architecture: 'x86' | 'arm'}[],
 	cores?: number,
 	disk: number,
 	memory?: number,

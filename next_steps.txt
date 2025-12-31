@@ -1,4 +1,3 @@
-Add architecture to snapshot data, only list architecture supported by that snapshot
 Verify availability of the location/type combo before spin up attempt, show error if not
 Show the same error on Hetzner error 412
 Implement listing and choice of primary IPs before spinning up
@@ -65,3 +64,4 @@ Before spinning up a server, show confirmation of the details: location, type, k
 Use selected SSH keys
 Use selected IP config when spinning up a server
 Show architecture when selecting server type
+Add architecture to snapshot data, only list architecture supported by that snapshot

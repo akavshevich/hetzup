@@ -197,10 +197,22 @@ export async function get_running_servers(): Promise<RunningServer[]>
 	}
 }
 
-const SnapshotsAPIStructure = type({images: type({id: "number", created: "string", created_from: {name: "string"}, image_size: "number | null"}, "[]")});
+const SnapshotsAPIStructure = type(
+	{
+		images: type(
+			{
+				id: "number", 
+				created: "string", 
+				created_from: {name: "string"}, 
+				image_size: "number | null",
+				architecture: "'x86' | 'arm'"
+			}, "[]"
+		)
+	}
+);
 type SnapshotsAPIStructure = typeof SnapshotsAPIStructure.infer;
 
-export async function get_snapshots(): Promise<{id: number, name: string, date: string, disk: number}[]>
+export async function get_snapshots(): Promise<{id: number, name: string, date: string, disk: number, architecture: 'x86' | 'arm'}[]>
 {
 	const call = await call_hetzner_api('images', 'GET', {type: 'snapshot'});
 
@@ -221,7 +233,7 @@ export async function get_snapshots(): Promise<{id: number, name: string, date: 
 				image_size = 0;
 			}
 
-			snapshots.push({id: image.id, name: image.created_from.name, date: image.created, disk: image_size})
+			snapshots.push({id: image.id, name: image.created_from.name, date: image.created, disk: image_size, architecture: image.architecture});
 		}
 
 		return snapshots;
@@ -247,7 +259,7 @@ const ServerTypesAPIStructure = type(
 );
 type ServerTypesAPIStructure = typeof ServerTypesAPIStructure.infer;
 
-export async function get_available_server_types(location?: string): Promise<ServerType[]>
+export async function get_available_server_types(location?: string, architecture?: 'x86' | 'arm'): Promise<ServerType[]>
 {
 	const call = await call_hetzner_api('server_types', 'GET');
 
@@ -286,6 +298,11 @@ export async function get_available_server_types(location?: string): Promise<Ser
 			}
 
 			if(hourly_price === 0 || monthly_price === 0)
+			{
+				continue;
+			}
+
+			if(architecture && server_type.architecture !== architecture)
 			{
 				continue;
 			}
