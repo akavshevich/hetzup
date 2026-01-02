@@ -661,6 +661,7 @@ export function update_config_for_server(server: Server, new_config?: NewServerC
 
 					current_server_config.servers[index].location = new_config.location;
 					current_server_config.servers[index].ssh_keys = new_config.ssh_keys;
+					current_server_config.servers[index].last_update = Date.now();
 					server_in_config = true;
 				}
 			}
@@ -672,6 +673,7 @@ export function update_config_for_server(server: Server, new_config?: NewServerC
 					current_server_config.servers[index].ipv4 = server.ipv4;
 					current_server_config.servers[index].ipv6 = server.ipv6;
 					current_server_config.servers[index].location = server.location;
+					current_server_config.servers[index].last_update = Date.now();
 					server_in_config = true;
 				}
 			}
@@ -686,7 +688,8 @@ export function update_config_for_server(server: Server, new_config?: NewServerC
 				ipv4: server.ipv4,
 				ipv6: server.ipv6,
 				location: server.location,
-				ssh_keys: empty_keys
+				ssh_keys: empty_keys,
+				last_update: Date.now()
 			};
 
 			if(new_config)
@@ -718,7 +721,8 @@ export function update_config_for_server(server: Server, new_config?: NewServerC
 			ipv4: server.ipv4, 
 			ipv6: server.ipv6, 
 			location: server.location,
-			ssh_keys: empty_keys
+			ssh_keys: empty_keys,
+			last_update: Date.now()
 		};
 
 			if(new_config)

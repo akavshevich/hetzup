@@ -23,7 +23,8 @@ const ServerConfig = type(
 				"ipv4?": "string", 
 				"ipv6?": "string", 
 				"location?": "string",
-				"ssh_keys?": "string[]"
+				"ssh_keys?": "string[]",
+				"last_update": "number"
 			}, "[]")
 	}
 );
