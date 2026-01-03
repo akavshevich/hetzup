@@ -28,6 +28,9 @@ export async function main(navigate_to?: string)
 
 		switch (main_menu_response)
 		{
+			case 'reverse_action':
+				return;
+
 			case 'servers':
 				spinner.text = 'Loading servers...';
 				spinner.start();

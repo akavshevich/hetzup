@@ -4,9 +4,11 @@ import input from '@inquirer/input';
 import { checkbox, Separator } from '@inquirer/prompts';
 import { NewServerConfig, PrimaryIP, Server, ServerList, ServerType } from './types';
 import chalk from 'chalk';
-import { read_hetzner_config, update_hetzner_config } from './configs';
+import { read_hetzner_config, read_server_config, update_hetzner_config } from './configs';
 import { call_hetzner_api, get_locations, get_running_servers, get_ssh_keys } from './api_calls';
 import ora from 'ora';
+import { get_reverse_of_last_server_status_change } from './server_actions';
+import { server_actions } from './ui_flow';
 
 export async function get_text_response(prompt: string): Promise<string>
 {
@@ -202,7 +204,27 @@ export async function show_main_menu(): Promise< string | number >
 		{name: 'Exit', value: 'exit'}
 	];
 
-	return await get_select_response('Welcome to Hetzner Server Manager!', main_menu);
+	const reverse_last = await get_reverse_of_last_server_status_change();
+	if(reverse_last)
+	{
+		if(reverse_last.reverse_action === 'save_stop')
+		{
+			main_menu.unshift({name: `Pause ${reverse_last.server.name}`, value: 'reverse_action'});
+		}
+		else
+		{
+			main_menu.unshift({name: `Resume ${reverse_last.server.name}`, value: 'reverse_action'});
+		}
+	}
+
+	const selected_menu_option = await get_select_response('Welcome to Hetzner Server Manager!', main_menu);
+
+	if(reverse_last && selected_menu_option === 'reverse_action')
+	{
+		await server_actions(reverse_last.server, reverse_last.reverse_action);
+	}
+
+	return selected_menu_option;
 }
 
 export async function confirm_dangerous(message: string, critical: boolean = false): Promise<boolean>

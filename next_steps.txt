@@ -1,4 +1,3 @@
-Add quick start / quick stop that reverses the latest inactivated / spun up server as a first main menu option
 Implement getting a list of OS images
 Implement default OS image config
 Add create new server UI

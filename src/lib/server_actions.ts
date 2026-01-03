@@ -750,3 +750,68 @@ export function update_config_for_server(server: Server, new_config?: NewServerC
 
 	update_server_config(current_server_config);
 }
+
+export async function get_reverse_of_last_server_status_change(): Promise<{server: Server, reverse_action: "spin_up_last" | "save_stop"} | false>
+{
+	const server_config = read_server_config();
+	if(!server_config)
+	{
+		return false;
+	}
+
+	let latest_server_interaction;
+	let server_name;
+
+	for(const server of server_config.servers)
+	{
+		if(!latest_server_interaction || latest_server_interaction < server.last_update)
+		{
+			latest_server_interaction = server.last_update;
+			server_name = server.name;
+		}
+	}
+
+	if(!server_name)
+	{
+		return false;
+	}
+
+	let reverse_action: 'save_stop' | 'spin_up_last' | false = false;
+	let last_changed_server: Server | false = false;
+
+	const spinner = ora({text: '', spinner: 'boxBounce'});
+	spinner.text = 'Loading servers...';
+	spinner.start();
+
+	const server_list = await generate_server_list();
+
+	spinner.stop();
+
+	for (const [name, server] of server_list)
+	{
+		if(name !== server_name)
+		{
+			continue;
+		}
+
+		if(server.status !== 'inactive')
+		{
+			reverse_action = 'save_stop';
+		}
+		else
+		{
+			reverse_action = 'spin_up_last';
+		}
+
+		last_changed_server = server;
+		break;
+		
+	}
+
+	if(!last_changed_server || !reverse_action)
+	{
+		return false;
+	}
+
+	return {server: last_changed_server, reverse_action};
+}
