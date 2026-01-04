@@ -710,3 +710,49 @@ export async function change_ip_auto_delete_status(ip_id: number, auto_delete: b
 
 	throw new Error('Unable to change primary IP auto delete status: ' + call.error);
 }
+
+const OSImage = type(
+	{
+		id: "number",
+		name: "string",
+		description: "string",
+		disk_size: "number",
+		type: "'system' | 'app'",
+		os_flavor: "'ubuntu' | 'centos' | 'debian' | 'fedora' | 'rocky' | 'alma' | 'opensuse' | 'unknown'",
+		os_version: "string | null",
+		architecture: "'x86' | 'arm'"
+	}	
+);
+type OSImage = typeof OSImage.infer;
+
+const OSImagesListAPIStructure = type(
+{
+	images: type(OSImage ,"[]")
+});
+type OSImagesListAPIStructure = typeof OSImagesListAPIStructure.infer;
+
+export async function get_os_images()
+{
+	const call = await call_hetzner_api('images?type=system&type=app', 'GET');
+
+	if(call.successful)
+	{
+		const response = OSImagesListAPIStructure(call.response);
+		if(response instanceof type.errors)
+		{
+			throw new Error('Unexpected API response for a list of OS images: ' + response.summary);
+		}
+
+		const os_images = [];
+		for(const os_image of response.images)
+		{
+			os_images.push(os_image);
+		}
+
+		return os_images;
+	}
+	else
+	{
+		throw new Error('Failed to call API to get a list of OS images: ' + call.error);
+	}
+}
