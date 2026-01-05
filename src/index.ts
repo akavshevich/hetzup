@@ -5,7 +5,7 @@ import { get_running_servers, get_snapshots, get_available_server_types, initial
 import select, { Separator } from '@inquirer/select';
 import chalk from 'chalk';
 import readline from 'readline';
-import { complete_server_removal, delete_ip, delete_snapshot_visual, determine_preselected_config, generate_server_list, load_available_ips, load_available_server_types, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server } from './lib/server_actions';
+import { complete_server_removal, delete_ip, delete_snapshot_visual, determine_preselected_config, generate_server_list, get_available_os_images, load_available_ips, load_available_server_types, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server } from './lib/server_actions';
 import { main } from './lib/ui_flow';
 
 console.log('');
@@ -92,8 +92,8 @@ async function test()
 		// const preselected_config = await determine_preselected_config(selected_server);
 		// await new_server_confirmation(preselected_config);
 
-		const os_images = await get_os_images();
-		console.log(os_images);
+		const os_images = await get_available_os_images(100, 'x86');
+		console.log(os_images.raw_os_images);
 	}
 	catch (error)
 	{

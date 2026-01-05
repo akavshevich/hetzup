@@ -2,8 +2,8 @@ import ora from 'ora';
 
 import { read_hetzner_config, read_server_config, update_server_config } from './configs';
 import { log_error, error_to_string, sleep, format_date } from "./utils";
-import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image, get_primary_ips, delete_primary_ip, change_ip_auto_delete_status } from './api_calls';
-import { NewServerConfig, NewServerDetails, PrimaryIP, Server, ServerList, ServerType } from './types';
+import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image, get_primary_ips, delete_primary_ip, change_ip_auto_delete_status, get_os_images } from './api_calls';
+import { NewServerConfig, NewServerDetails, OSImage, PrimaryIP, Server, ServerList, ServerType } from './types';
 import { show_info } from './interaction';
 import chalk from 'chalk';
 
@@ -814,4 +814,73 @@ export async function get_reverse_of_last_server_status_change(): Promise<{serve
 	}
 
 	return {server: last_changed_server, reverse_action};
+}
+
+export async function get_available_os_images(max_disk_size: number, architecture: 'x86' | 'arm')
+{
+	const spinner = ora({text: `Loading available OS images...`, spinner: 'point', color: 'cyan'}).start();
+	
+	try
+	{
+		const os_images = await get_os_images();
+
+		const raw_os_images: Map<string, OSImage[]> = new Map();
+		const app_images = [];
+
+		for(const os_image of os_images)
+		{
+			if(os_image.disk_size > max_disk_size)
+			{
+				continue;
+			}
+			if(os_image.architecture !== architecture)
+			{
+				continue;
+			}
+
+			if(os_image.type === 'app')
+			{
+				app_images.push(os_image);
+				continue;
+			}
+
+			const os_by_name = raw_os_images.get(os_image.os_flavor);
+			if(os_by_name)
+			{
+				os_by_name.push(os_image);
+			}
+			else
+			{
+				raw_os_images.set(os_image.os_flavor, []);
+			}
+
+			for (const [os_name, os_versions] of raw_os_images)
+			{
+				os_versions.sort(
+					function(a, b)
+					{
+						if(!a.os_version)
+						{
+							return 1;
+						}
+						if(!b.os_version)
+						{
+							return -1;
+						}
+
+						return parseFloat(b.os_version) - parseFloat(a.os_version);
+					}
+				);
+			}
+		}
+
+		spinner.stop();
+		return {raw_os_images, app_images};
+
+	}
+	catch (error)
+	{
+		spinner.stop();
+		throw new Error(error_to_string(error));
+	}
 }

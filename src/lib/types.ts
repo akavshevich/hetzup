@@ -1,3 +1,5 @@
+import { ArkErrors, type } from "arktype";
+
 export type ServerStatuses = 'running' | 'initializing' | 'starting' | 'stopping' | 'off' | 'deleting' | 'migrating' | 'rebuilding' | 'unknown' | 'inactive';
 
 export type Server =
@@ -50,3 +52,17 @@ export type ServerType =
 	monthly_price: number,
 	architecture: 'x86' | 'arm'
 }
+
+export const OSImage = type(
+	{
+		id: "number",
+		name: "string",
+		description: "string",
+		disk_size: "number",
+		type: "'system' | 'app'",
+		os_flavor: "'ubuntu' | 'centos' | 'debian' | 'fedora' | 'rocky' | 'alma' | 'opensuse' | 'unknown'",
+		os_version: "string | null",
+		architecture: "'x86' | 'arm'"
+	}	
+);
+export type OSImage = typeof OSImage.infer;

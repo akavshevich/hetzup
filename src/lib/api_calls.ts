@@ -3,7 +3,7 @@ import { ArkErrors, type } from "arktype";
 
 import { read_hetzner_config } from "./configs";
 import { log_error, error_to_string, if_null_then_undefined } from "./utils";
-import { NewServerDetails, PrimaryIP, Server, ServerType } from "./types";
+import { NewServerDetails, OSImage, PrimaryIP, Server, ServerType } from "./types";
 import { AxiosError } from 'axios';
 
 const APIResponse = type.or({"successful": "true", "response": "object"}, {"successful": "false", "error": "string"});
@@ -711,19 +711,6 @@ export async function change_ip_auto_delete_status(ip_id: number, auto_delete: b
 	throw new Error('Unable to change primary IP auto delete status: ' + call.error);
 }
 
-const OSImage = type(
-	{
-		id: "number",
-		name: "string",
-		description: "string",
-		disk_size: "number",
-		type: "'system' | 'app'",
-		os_flavor: "'ubuntu' | 'centos' | 'debian' | 'fedora' | 'rocky' | 'alma' | 'opensuse' | 'unknown'",
-		os_version: "string | null",
-		architecture: "'x86' | 'arm'"
-	}	
-);
-type OSImage = typeof OSImage.infer;
 
 const OSImagesListAPIStructure = type(
 {
@@ -731,7 +718,7 @@ const OSImagesListAPIStructure = type(
 });
 type OSImagesListAPIStructure = typeof OSImagesListAPIStructure.infer;
 
-export async function get_os_images()
+export async function get_os_images(): Promise< OSImage[] >
 {
 	const call = await call_hetzner_api('images?type=system&type=app', 'GET');
 
