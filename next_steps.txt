@@ -68,3 +68,4 @@ Add last change field to each server config
 Add quick start / quick stop that reverses the latest inactivated / spun up server as a first main menu option
 Implement getting a list of OS images
 Filter OS images by OS and architecture
+Filter out deprecated servers from the server type list for location

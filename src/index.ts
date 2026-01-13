@@ -87,13 +87,14 @@ async function test()
 		// 	await delete_ip(ip);
 		// }
 
-		// const available_server_types = await load_available_server_types('ash');
+		const available_server_types = await load_available_server_types('fsn1');
+		console.log(available_server_types);
 
 		// const preselected_config = await determine_preselected_config(selected_server);
 		// await new_server_confirmation(preselected_config);
 
-		const os_images = await get_available_os_images(100, 'x86');
-		console.log(os_images.raw_os_images);
+		// const os_images = await get_available_os_images(100, 'x86');
+		// console.log(os_images.raw_os_images);
 	}
 	catch (error)
 	{

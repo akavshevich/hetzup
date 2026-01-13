@@ -254,7 +254,8 @@ const ServerTypesAPIStructure = type(
 			memory: "number",
 			disk: "number",
 			architecture: "'x86' | 'arm'",
-			prices: type({location: "string", price_hourly: {gross: "string"}, price_monthly: {gross: "string"}}, "[]")
+			prices: type({location: "string", price_hourly: {gross: "string"}, price_monthly: {gross: "string"}}, "[]"),
+			locations: type({name: "string", deprecation: type({unavailable_after: "string"}).or("null"),}, "[]")
 		}, "[]")
 	}
 );
@@ -295,6 +296,20 @@ export async function get_available_server_types(location?: string, architecture
 				{
 					hourly_price = +server_location.price_hourly.gross;
 					monthly_price = +server_location.price_monthly.gross;
+				}
+			}
+
+			for (const server_location of server_type.locations)
+			{
+				if(!server_location.deprecation)
+				{
+					continue;
+				}
+
+				const unavailable_after = new Date(server_location.deprecation.unavailable_after);
+				if(unavailable_after < new Date())
+				{
+					hourly_price = 0;
 				}
 			}
 
