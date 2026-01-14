@@ -1,13 +1,13 @@
-import { clear_prompt, error_to_string, format_date, round_to_precision } from './utils';
+import { capitalize, clear_prompt, error_to_string, format_date, round_to_precision } from './utils';
 import select from '@inquirer/select';
 import input from '@inquirer/input';
 import { checkbox, Separator } from '@inquirer/prompts';
-import { NewServerConfig, PrimaryIP, Server, ServerList, ServerType } from './types';
+import { NewServerConfig, OSImage, PrimaryIP, Server, ServerList, ServerType } from './types';
 import chalk from 'chalk';
 import { read_hetzner_config, read_server_config, update_hetzner_config } from './configs';
-import { call_hetzner_api, get_locations, get_running_servers, get_ssh_keys } from './api_calls';
+import { call_hetzner_api, get_locations, get_running_servers, get_snapshot, get_ssh_keys } from './api_calls';
 import ora from 'ora';
-import { get_reverse_of_last_server_status_change } from './server_actions';
+import { get_available_os_images, get_reverse_of_last_server_status_change } from './server_actions';
 import { server_actions } from './ui_flow';
 
 export async function get_text_response(prompt: string): Promise<string>
@@ -346,6 +346,110 @@ export async function select_location(save_preferred?: boolean)
 	}
 }
 
+export async function select_os(architecture?: 'x86' | 'arm', save_preferred?: boolean)
+{
+	const spinner = ora({text: 'Loading available OS images...', spinner: 'boxBounce', color: 'cyan'}).start();
+	
+	let prompt = 'Select OS image';
+	if(save_preferred)
+	{
+		prompt = 'Select preferred OS image';
+	}
+
+	try
+	{
+		const os_images = await get_available_os_images(undefined, architecture);
+		spinner.stop();
+		
+		const images_index: Map<string, {type: 'os' | 'app', details: OSImage}[]> = new Map();
+
+		const os_options: SelectInquiryOptions = [];
+		for (const [os_name, os_versions] of os_images.raw_os_images)
+		{
+			images_index.set(os_name, []);
+			const versions = images_index.get(os_name);
+
+			for(const os_version of os_versions)
+			{
+				versions?.push({type: 'os', details: os_version});
+			}
+
+			os_options.push({name: capitalize(os_name), value: os_name});
+		}
+
+		os_options.push(new Separator());
+
+		for (const [app_name, app_versions] of os_images.app_images)
+		{
+			images_index.set(app_name, []);
+			const versions = images_index.get(app_name);
+
+			for(const version of app_versions)
+			{
+				versions?.push({type: 'app', details: version});
+			}
+
+			os_options.push({name: capitalize(app_name), value: app_name});
+		}
+
+		os_options.push(new Separator());
+		os_options.push({name: 'Back', value: 0});
+
+		const selected_os = await get_select_response(prompt, os_options);
+		
+		if(typeof selected_os !== 'string')
+		{
+			return;
+		}
+
+		const selected_os_details = images_index.get(selected_os);
+		
+		if(selected_os_details)
+		{
+			const version_options: SelectInquiryOptions = [];
+			const image_index_by_id = new Map();
+
+			for(const os_image of selected_os_details)
+			{
+				version_options.push({name: `${os_image.details.description} ${os_image.details.architecture}`, value: os_image.details.id});
+				image_index_by_id.set(os_image.details.id, os_image);
+			}
+
+			version_options.push(new Separator());
+			version_options.push({name: 'Back', value: 0});
+
+			const selected_os_image_id = await get_select_response(
+				`Select ${capitalize(selected_os_details[0].details.os_flavor)} version`, version_options);
+
+			if(selected_os_image_id === 0)
+			{
+				return select_os(architecture, save_preferred);
+			}
+
+			const selected_image = image_index_by_id.get(selected_os_image_id);
+
+			if(save_preferred)
+			{
+				update_hetzner_config({preferred_os: selected_image.details.id});
+			}
+
+			return {
+				id: selected_image.details.id, 
+				display_name: `${capitalize(selected_image.details.description)} ${selected_image.details.architecture}`
+			};
+		}
+		else
+		{
+			return;
+		}
+	}
+	catch(error)
+	{
+		spinner.stop();
+		throw new Error(error_to_string(error));
+	}
+}
+
 type MultiChoiceInquiryOptions = SelectInquiryOptions & {checked?: boolean};
 
 export async function select_ssh_keys(current_keys: string[], save_default?: boolean)
@@ -446,6 +550,10 @@ export async function show_config(): Promise<string | number | false>
 	const hetzner_config = read_hetzner_config();
 
 	let pref_location = 'fsn1';
+
+	let pref_os = 161547269;
+	let pref_os_name = 'Ubuntu 24.04';
+
 	let ssh_keys: string[] = [];
 	let keep_ipv4 = 'ask';
 	let keep_ipv6 = 'ask';
@@ -453,6 +561,17 @@ export async function show_config(): Promise<string | number | false>
 	if(hetzner_config && hetzner_config.preferred_location)
 	{
 		pref_location = hetzner_config.preferred_location;
+	}
+
+	if(hetzner_config && hetzner_config.preferred_os)
+	{
+		pref_os = hetzner_config.preferred_os;
+
+		const spinner = ora({text: 'Loading OS image details...', spinner: 'boxBounce', color: 'cyan'}).start();
+		const image_details = await get_snapshot(pref_os);
+		spinner.stop();
+
+		pref_os_name = `${capitalize(image_details.description)} ${image_details.architecture}`;
 	}
 
 	if(hetzner_config && hetzner_config.ssh_keys)
@@ -470,6 +589,7 @@ export async function show_config(): Promise<string | number | false>
 	[
 		{name: 'Change Hetzner Cloud API key', value: 'api_key'},
 		{name: `Preferred location: [${chalk.green(pref_location)}]`, value: 'pref_location'},
+		{name: `Preferred OS: [${chalk.green(pref_os_name)}]`, value: 'pref_os'},
 		{name: `Default SSH keys: [${chalk.green(ssh_keys.join(', '))}]`, value: 'ssh_keys'},
 		{name: `Keep IPv4 when stopping a server (at cost): [${chalk.green(keep_ipv4)}]`, value: 'keep_ipv4'},
 		{name: `Keep IPv6 when stopping a server (free): [${chalk.green(keep_ipv6)}]`, value: 'keep_ipv6'},

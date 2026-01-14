@@ -1,5 +1,5 @@
 import ora from "ora";
-import { configure_api_key, select_ssh_keys, configure_ip_retention, select_location, confirm_dangerous, decide_to_keep_ips, select_server, show_config, show_error, show_main_menu, show_server_actions, show_snapshots, new_server_confirmation } from "./interaction";
+import { configure_api_key, select_ssh_keys, configure_ip_retention, select_location, confirm_dangerous, decide_to_keep_ips, select_server, show_config, show_error, show_main_menu, show_server_actions, show_snapshots, new_server_confirmation, select_os } from "./interaction";
 import { complete_server_removal, delete_snapshot_visual, determine_preselected_config, generate_server_list, get_snapshot_details, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server, update_ip_retention_policy } from "./server_actions";
 import { Server } from "./types";
 import { error_to_string, format_date, sleep } from "./utils";
@@ -304,6 +304,11 @@ export async function configure()
 			
 			case 'pref_location':
 				await select_location(true);
+				configure();
+				break;
+
+			case 'pref_os':
+				await select_os(undefined, true);
 				configure();
 				break;
 

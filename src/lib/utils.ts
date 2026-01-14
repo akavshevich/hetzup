@@ -105,3 +105,8 @@ export function if_null_then_undefined(a: any)
 
 	return a;
 }
+
+export function capitalize(string: string)
+{
+	return string.charAt(0).toUpperCase() + string.slice(1);
+}

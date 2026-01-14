@@ -816,7 +816,7 @@ export async function get_reverse_of_last_server_status_change(): Promise<{serve
 	return {server: last_changed_server, reverse_action};
 }
 
-export async function get_available_os_images(max_disk_size: number, architecture: 'x86' | 'arm')
+export async function get_available_os_images(max_disk_size?: number, architecture?: 'x86' | 'arm')
 {
 	const spinner = ora({text: `Loading available OS images...`, spinner: 'point', color: 'cyan'}).start();
 	
@@ -825,53 +825,62 @@ export async function get_available_os_images(max_disk_size: number, architectur
 		const os_images = await get_os_images();
 
 		const raw_os_images: Map<string, OSImage[]> = new Map();
-		const app_images = [];
+		const app_images: Map<string, OSImage[]> = new Map();
 
 		for(const os_image of os_images)
 		{
-			if(os_image.disk_size > max_disk_size)
+			if(max_disk_size && os_image.disk_size > max_disk_size)
 			{
 				continue;
 			}
-			if(os_image.architecture !== architecture)
+			if(architecture && os_image.architecture !== architecture)
 			{
 				continue;
 			}
 
 			if(os_image.type === 'app')
 			{
-				app_images.push(os_image);
-				continue;
-			}
-
-			const os_by_name = raw_os_images.get(os_image.os_flavor);
-			if(os_by_name)
-			{
-				os_by_name.push(os_image);
+				const app_by_name = app_images.get(os_image.name);
+				if(app_by_name)
+				{
+					app_by_name.push(os_image);
+				}
+				else
+				{
+					app_images.set(os_image.name, [os_image]);
+				}
 			}
 			else
 			{
-				raw_os_images.set(os_image.os_flavor, []);
+				const os_by_name = raw_os_images.get(os_image.os_flavor);
+				if(os_by_name)
+				{
+					os_by_name.push(os_image);
+				}
+				else
+				{
+					raw_os_images.set(os_image.os_flavor, [os_image]);
+				}
 			}
+		}
 
-			for (const [os_name, os_versions] of raw_os_images)
-			{
-				os_versions.sort(
-					function(a, b)
+		for (const [os_name, os_versions] of raw_os_images)
+		{
+			os_versions.sort(
+				function(a, b)
+				{
+					if(!a.os_version)
 					{
-						if(!a.os_version)
-						{
-							return 1;
-						}
-						if(!b.os_version)
-						{
-							return -1;
-						}
-
-						return parseFloat(b.os_version) - parseFloat(a.os_version);
+						return 1;
 					}
-				);
-			}
+					if(!b.os_version)
+					{
+						return -1;
+					}
+
+					return parseFloat(b.os_version) - parseFloat(a.os_version);
+				}
+			);
 		}
 
 		spinner.stop();

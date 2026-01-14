@@ -6,6 +6,7 @@ const HetznerConfig = type(
 	{
 		"api_token": "string",
 		"preferred_location?": "string",
+		"preferred_os?": "number",
 		"ssh_keys?": "string[]",
 		"keep_ipv4": "'yes' | 'no' | 'ask'",
 		"keep_ipv6": "'yes' | 'no' | 'ask'"

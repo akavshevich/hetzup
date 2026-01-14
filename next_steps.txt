@@ -1,4 +1,3 @@
-Implement default OS image config
 Add create new server UI
 Add ports config for servers
 Create daemonizable SSH tunnel
@@ -69,3 +68,4 @@ Add quick start / quick stop that reverses the latest inactivated / spun up serv
 Implement getting a list of OS images
 Filter OS images by OS and architecture
 Filter out deprecated servers from the server type list for location
+Implement default OS image config

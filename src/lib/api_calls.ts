@@ -347,7 +347,9 @@ export async function get_available_server_types(location?: string, architecture
 const SnapshotDetails = type(
 	{
 		id: "number",
-		status: "'available' | 'creating' | 'unavailable'"
+		status: "'available' | 'creating' | 'unavailable'",
+		description: "string",
+		architecture: "'x86' | 'arm'"
 	}
 );
 
