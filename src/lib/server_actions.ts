@@ -619,7 +619,7 @@ export async function determine_preselected_config(server?: Server, location?: s
 			{
 				location = hetzner_config.preferred_location;
 			}
-			if(hetzner_config.preferred_os)
+			if(hetzner_config.preferred_os && !server)
 			{
 				os_image = hetzner_config.preferred_os;
 			}
@@ -645,30 +645,33 @@ export async function determine_preselected_config(server?: Server, location?: s
 			architecture = server.snapshots[0].architecture;
 		}
 
-		if(!os_image)
+		if(!server)
 		{
-			if(architecture === 'x86')
+			if(!os_image)
 			{
-				os_image = 161547269;
+				if(architecture === 'x86')
+				{
+					os_image = 161547269;
+				}
+				else if(architecture === 'arm')
+				{
+					os_image = 161547270;
+				}
 			}
-			else if(architecture === 'arm')
+			else
 			{
-				os_image = 161547270;
+				const spinner = ora({text: 'Loading OS image details...', spinner: 'point', color: 'cyan'}).start();
+				
+				const image_details = await get_snapshot(os_image);
+				architecture = image_details.architecture;
+
+				spinner.stop();
 			}
-		}
-		else
-		{
-			const spinner = ora({text: 'Loading OS image details...', spinner: 'point', color: 'cyan'}).start();
-			
-			const image_details = await get_snapshot(os_image);
-			architecture = image_details.architecture;
 
-			spinner.stop();
-		}
-
-		if(!architecture)
-		{
-			architecture = 'x86';
+			if(!architecture)
+			{
+				architecture = 'x86';
+			}
 		}
 
 		const available_server_types = await load_available_server_types(location, architecture);

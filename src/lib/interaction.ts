@@ -9,6 +9,8 @@ import { call_hetzner_api, get_available_server_types, get_locations, get_runnin
 import ora from 'ora';
 import { generate_server_list, get_available_os_images, get_reverse_of_last_server_status_change, load_available_server_types } from './server_actions';
 import { server_actions } from './ui_flow';
+import is_valid_hostname from 'is-valid-hostname';
+
 
 export async function get_text_response(prompt: string): Promise<string>
 {
@@ -938,11 +940,21 @@ export async function new_server_confirmation(
 
 export async function choose_server_name()
 {
-	const server_name = await get_text_response('Choose server name:');
+	const server_name = await get_text_response('Choose server name (leave empty to cancel):');
 
 	const spinner = ora({text: `Checking existing servers...`, spinner: 'point', color: 'cyan'}).start();
 	const existing_server_list = await generate_server_list();
 	spinner.stop();
+
+	if(server_name === '')
+	{
+		return false;
+	}
+
+	if(!is_valid_hostname(server_name))
+	{
+		throw new Error(`${server_name} is not a valid hostname!`);
+	}
 
 	for(const [name, details] of existing_server_list)
 	{

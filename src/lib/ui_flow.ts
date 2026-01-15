@@ -51,6 +51,12 @@ export async function main(navigate_to?: string)
 			case 'new_server':
 				const server_name = await choose_server_name();
 
+				if(!server_name)
+				{
+					main();
+					break;
+				}
+
 				const preselected_config = await determine_preselected_config();
 				const confirmed_config = await new_server_confirmation(
 					preselected_config, 
@@ -64,16 +70,16 @@ export async function main(navigate_to?: string)
 					break;
 				}
 
-				// await create_new_server(
-				// 	server_name, 
-				// 	confirmed_config.type, 
-				// 	confirmed_config.os_image,
-				// 	confirmed_config.location, 
-				// 	confirmed_config.ssh_keys,
-				// 	confirmed_config.ipv4,
-				// 	confirmed_config.ipv6,
-				// 	preselected_config.available_ips
-				// );
+				await create_new_server(
+					server_name, 
+					confirmed_config.type, 
+					confirmed_config.os_image,
+					confirmed_config.location, 
+					confirmed_config.ssh_keys,
+					confirmed_config.ipv4,
+					confirmed_config.ipv6,
+					preselected_config.available_ips
+				);
 
 				break;
 
