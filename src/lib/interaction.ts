@@ -5,9 +5,9 @@ import { checkbox, Separator } from '@inquirer/prompts';
 import { NewServerConfig, OSImage, PrimaryIP, Server, ServerList, ServerType } from './types';
 import chalk from 'chalk';
 import { read_hetzner_config, read_server_config, update_hetzner_config } from './configs';
-import { call_hetzner_api, get_locations, get_running_servers, get_snapshot, get_ssh_keys } from './api_calls';
+import { call_hetzner_api, get_available_server_types, get_locations, get_running_servers, get_snapshot, get_ssh_keys } from './api_calls';
 import ora from 'ora';
-import { get_available_os_images, get_reverse_of_last_server_status_change } from './server_actions';
+import { generate_server_list, get_available_os_images, get_reverse_of_last_server_status_change, load_available_server_types } from './server_actions';
 import { server_actions } from './ui_flow';
 
 export async function get_text_response(prompt: string): Promise<string>
@@ -346,7 +346,8 @@ export async function select_location(save_preferred?: boolean)
 	}
 }
 
-export async function select_os(architecture?: 'x86' | 'arm', save_preferred?: boolean)
+export async function select_os(architecture?: 'x86' | 'arm', save_preferred?: boolean): 
+								Promise<{ id: number; display_name: string; architecture: 'x86' | 'arm'} | false>
 {
 	const spinner = ora({text: 'Loading available OS images...', spinner: 'boxBounce', color: 'cyan'}).start();
 	
@@ -399,7 +400,7 @@ export async function select_os(architecture?: 'x86' | 'arm', save_preferred?: b
 		
 		if(typeof selected_os !== 'string')
 		{
-			return;
+			return false;
 		}
 
 		const selected_os_details = images_index.get(selected_os);
@@ -407,7 +408,7 @@ export async function select_os(architecture?: 'x86' | 'arm', save_preferred?: b
 		if(selected_os_details)
 		{
 			const version_options: SelectInquiryOptions = [];
-			const image_index_by_id = new Map();
+			const image_index_by_id: Map<number | string, {type: 'os' | 'app', details: OSImage}> = new Map();
 
 			for(const os_image of selected_os_details)
 			{
@@ -428,19 +429,25 @@ export async function select_os(architecture?: 'x86' | 'arm', save_preferred?: b
 
 			const selected_image = image_index_by_id.get(selected_os_image_id);
 
-			if(save_preferred)
+			if(selected_image)
 			{
-				update_hetzner_config({preferred_os: selected_image.details.id});
+				if(save_preferred)
+				{
+					update_hetzner_config({preferred_os: selected_image.details.id});
+				}
+
+				return {
+					id: selected_image.details.id, 
+					display_name: `${capitalize(selected_image.details.description)} ${selected_image.details.architecture}`,
+					architecture: selected_image.details.architecture
+				};
 			}
 
-			return {
-				id: selected_image.details.id, 
-				display_name: `${capitalize(selected_image.details.description)} ${selected_image.details.architecture}`
-			};
+			return false;
 		}
 		else
 		{
-			return;
+			return false;
 		}
 	}
 	catch(error)
@@ -835,6 +842,19 @@ export async function new_server_confirmation(
 		{name: 'Cancel', value: 0}
 	];
 
+	if(new_server_config.os_image)
+	{
+		const spinner = ora({text: 'Loading OS image details...', spinner: 'boxBounce', color: 'cyan'}).start();
+		const image_details = await get_snapshot(new_server_config.os_image);
+		spinner.stop();
+
+		available_changes.splice(
+			3,
+			0, 
+			{name: `OS: [${chalk.green(`${capitalize(image_details.description)} ${image_details.architecture}`)}]`, value: 'pref_os'}
+		);
+	}
+
 	const change_selected = await get_select_response('Config', available_changes);
 	if(!change_selected)
 	{
@@ -862,6 +882,43 @@ export async function new_server_confirmation(
 				}
 				return await new_server_confirmation(new_server_config, available_ips, available_server_types);
 
+			case 'pref_os':
+				const new_image = await select_os();
+				if(new_image)
+				{
+					new_server_config.os_image = new_image.id;
+					available_server_types = await load_available_server_types(new_server_config.location, new_image.architecture);
+
+					let still_available = false;
+					for (const server_type of available_server_types)
+					{
+						if(server_type.name === new_server_config.type)
+						{
+							still_available = true;
+						}
+					}
+
+					if(!still_available)
+					{
+						if(available_server_types.length > 0)
+						{
+							new_server_config.type = available_server_types[0].name;
+						}
+						else
+						{
+							if(new_image.architecture === 'x86')
+							{
+								new_server_config.type = 'cx23';
+							}
+							else
+							{
+								new_server_config.type = 'cax11';
+							}
+						}
+					}
+				}
+				return await new_server_confirmation(new_server_config, available_ips, available_server_types);
+
 			case 'ssh_keys':
 				const ssh_keys = await select_ssh_keys(new_server_config.ssh_keys);
 				new_server_config.ssh_keys = ssh_keys;
@@ -877,4 +934,23 @@ export async function new_server_confirmation(
 				throw new Error('Unknown server config selection');
 		}
 	}
+}
+
+export async function choose_server_name()
+{
+	const server_name = await get_text_response('Choose server name:');
+
+	const spinner = ora({text: `Checking existing servers...`, spinner: 'point', color: 'cyan'}).start();
+	const existing_server_list = await generate_server_list();
+	spinner.stop();
+
+	for(const [name, details] of existing_server_list)
+	{
+		if(name === server_name)
+		{
+			throw new Error(`Server ${server_name} already exists!`);
+		}
+	}
+
+	return server_name;
 }

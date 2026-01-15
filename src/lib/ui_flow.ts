@@ -1,6 +1,6 @@
 import ora from "ora";
-import { configure_api_key, select_ssh_keys, configure_ip_retention, select_location, confirm_dangerous, decide_to_keep_ips, select_server, show_config, show_error, show_main_menu, show_server_actions, show_snapshots, new_server_confirmation, select_os } from "./interaction";
-import { complete_server_removal, delete_snapshot_visual, determine_preselected_config, generate_server_list, get_snapshot_details, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server, update_ip_retention_policy } from "./server_actions";
+import { configure_api_key, select_ssh_keys, configure_ip_retention, select_location, confirm_dangerous, decide_to_keep_ips, select_server, show_config, show_error, show_main_menu, show_server_actions, show_snapshots, new_server_confirmation, select_os, choose_server_name } from "./interaction";
+import { complete_server_removal, create_new_server, delete_snapshot_visual, determine_preselected_config, generate_server_list, get_snapshot_details, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server, update_ip_retention_policy } from "./server_actions";
 import { Server } from "./types";
 import { error_to_string, format_date, sleep } from "./utils";
 import { read_hetzner_config, update_hetzner_config } from "./configs";
@@ -46,6 +46,35 @@ export async function main(navigate_to?: string)
 				}
 
 				server_actions(selected_server);
+				break;
+
+			case 'new_server':
+				const server_name = await choose_server_name();
+
+				const preselected_config = await determine_preselected_config();
+				const confirmed_config = await new_server_confirmation(
+					preselected_config, 
+					preselected_config.available_ips, 
+					preselected_config.available_server_types
+				);
+
+				if(!confirmed_config || !confirmed_config.os_image)
+				{
+					main();
+					break;
+				}
+
+				// await create_new_server(
+				// 	server_name, 
+				// 	confirmed_config.type, 
+				// 	confirmed_config.os_image,
+				// 	confirmed_config.location, 
+				// 	confirmed_config.ssh_keys,
+				// 	confirmed_config.ipv4,
+				// 	confirmed_config.ipv6,
+				// 	preselected_config.available_ips
+				// );
+
 				break;
 
 			case 'configure':

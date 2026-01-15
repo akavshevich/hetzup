@@ -536,6 +536,22 @@ export async function load_available_server_types(location: string, architecture
 	try
 	{
 		const server_types = await get_available_server_types(location, architecture);
+		server_types.sort(
+			function(a, b)
+			{
+				if(!a.monthly_price)
+				{
+					return -1;
+				}
+				if(!b.monthly_price)
+				{
+					return 1;
+				}
+
+				return a.monthly_price - b.monthly_price;
+			}
+		);
+
 		spinner.stop();
 		return server_types;
 	}
@@ -563,6 +579,7 @@ export async function determine_preselected_config(server?: Server, location?: s
 	try
 	{
 		let type;
+		let os_image;
 		let ssh_keys: string[] = [];
 		let ipv4;
 		let ipv6;
@@ -602,6 +619,10 @@ export async function determine_preselected_config(server?: Server, location?: s
 			{
 				location = hetzner_config.preferred_location;
 			}
+			if(hetzner_config.preferred_os)
+			{
+				os_image = hetzner_config.preferred_os;
+			}
 			if(ssh_keys.length === 0 && hetzner_config.ssh_keys)
 			{
 				ssh_keys = hetzner_config.ssh_keys;
@@ -618,13 +639,40 @@ export async function determine_preselected_config(server?: Server, location?: s
 			ipv6 = undefined;
 		}
 
-		let architecture;
+		let architecture: 'x86' | 'arm' | undefined;
 		if(server && server.snapshots.length > 0)
 		{
 			architecture = server.snapshots[0].architecture;
 		}
 
+		if(!os_image)
+		{
+			if(architecture === 'x86')
+			{
+				os_image = 161547269;
+			}
+			else if(architecture === 'arm')
+			{
+				os_image = 161547270;
+			}
+		}
+		else
+		{
+			const spinner = ora({text: 'Loading OS image details...', spinner: 'point', color: 'cyan'}).start();
+			
+			const image_details = await get_snapshot(os_image);
+			architecture = image_details.architecture;
+
+			spinner.stop();
+		}
+
+		if(!architecture)
+		{
+			architecture = 'x86';
+		}
+
 		const available_server_types = await load_available_server_types(location, architecture);
+
 		if(!type)
 		{
 			if(available_server_types.length > 0)
@@ -633,7 +681,44 @@ export async function determine_preselected_config(server?: Server, location?: s
 			}
 			else
 			{
-				type = 'cx23';
+				if(architecture === 'x86')
+				{
+					type = 'cx23';
+				}
+				else
+				{
+					type = 'cax11';
+				}
+			}
+		}
+		else
+		{
+			let still_available = false;
+			for (const server_type of available_server_types)
+			{
+				if(server_type.name === type)
+				{
+					still_available = true;
+				}
+			}
+
+			if(!still_available)
+			{
+				if(available_server_types.length > 0)
+				{
+					type = available_server_types[0].name;
+				}
+				else
+				{
+					if(architecture === 'x86')
+					{
+						type = 'cx23';
+					}
+					else
+					{
+						type = 'cax11';
+					}
+				}
 			}
 		}
 
@@ -647,7 +732,7 @@ export async function determine_preselected_config(server?: Server, location?: s
 			ipv6 = 'new';
 		}
 
-		return { location, type, ssh_keys, ipv4, ipv6, available_ips, available_server_types };
+		return { location, type, os_image, ssh_keys, ipv4, ipv6, available_ips, available_server_types };
 	}
 	catch (error)
 	{
