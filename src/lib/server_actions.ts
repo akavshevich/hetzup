@@ -1,4 +1,4 @@
-import ora from 'ora';
+import ora, { Ora } from 'ora';
 
 import { read_hetzner_config, read_server_config, update_server_config } from './configs';
 import { log_error, error_to_string, sleep, format_date } from "./utils";
@@ -164,6 +164,121 @@ export async function stop_server(server: Server, mode: 'save_stop' | 'stop' = '
 	}
 }
 
+function ip_config_to_hetzner_format(ipv4: string, ipv6: string, available_ips?: { ipv4: PrimaryIP[]; ipv6: PrimaryIP[]; } )
+{
+	const ip_config: { "enable_ipv4": boolean, "enable_ipv6": boolean, "ipv4": null | number, "ipv6": null | number } =
+	{
+		"enable_ipv4": false,
+		"enable_ipv6": false,
+		"ipv4": null,
+		"ipv6": null
+	};
+
+	if(ipv4 !== 'none')
+	{
+		ip_config.enable_ipv4 = true;
+
+		if(ipv4 !== 'new' && available_ips)
+		{
+			const ipv4_id = get_ip_id(ipv4, 'ipv4', available_ips);
+			if(typeof ipv4_id === 'number')
+			{
+				ip_config.ipv4 = ipv4_id;
+			}
+		}
+	}
+
+	if(ipv6 !== 'none')
+	{
+		ip_config.enable_ipv6 = true;
+
+		if(ipv6 !== 'new' && available_ips)
+		{
+			const ipv6_id = get_ip_id(ipv6, 'ipv6', available_ips);
+			if(typeof ipv6_id === 'number')
+			{
+				ip_config.ipv6 = ipv6_id;
+			}
+		}
+	}
+
+	return ip_config;
+}
+
+async function spin_up_visual(new_server_details: NewServerDetails, spinner: Ora, ssh_keys: string[], ipv4: string, ipv6: string): Promise< Server > 
+{
+		return new Promise(
+			function (resolve)
+			{
+				const check_on_server = setInterval(
+					async function ()
+					{
+						const server_details = await get_server(new_server_details.id);
+						
+						if(server_details.status === 'starting')
+						{
+							spinner.color = 'green';
+						}
+						
+						if(server_details.status !== 'running')
+						{
+							const capitalized_status = String(server_details.status).charAt(0).toUpperCase() + String(server_details.status).slice(1);
+							spinner.text = `${capitalized_status} ${server_details.name}...`;
+							return;
+						}
+
+
+						clearInterval(check_on_server);
+						spinner.stop();
+
+						if(server_details.ips.ipv4)
+						{
+							ipv4 = server_details.ips.ipv4.ip;
+						}
+
+						if(server_details.ips.ipv6)
+						{
+							ipv6 = server_details.ips.ipv6.ip;
+						}
+
+						const server: Server = 
+						{
+							id: server_details.id,
+							name: server_details.name,
+							status: "running",
+							snapshots: [],
+							disk: server_details.disk
+						};
+
+						try
+						{
+							update_config_for_server(
+								server, 
+								{
+									name: server_details.name, 
+									location: server_details.location, 
+									type: server_details.type,
+									ssh_keys: ssh_keys,
+									ipv4,
+									ipv6,
+								}
+							);
+						}
+						catch{}
+
+						if(new_server_details.root_password)
+						{
+							await show_info(`Root password for ${server_details.name}: ${chalk.cyan(new_server_details.root_password)} It will not be shown again!`);
+						}
+
+						resolve(server_details);
+					},
+					2000
+				);
+			}
+		);
+}
+
 export async function spin_up_from_snapshot(
 						server: Server, 
 						type: string, 
@@ -185,108 +300,14 @@ export async function spin_up_from_snapshot(
 		snapshot_id = server.id;
 	}
 
-	const ip_config: { "enable_ipv4": boolean, "enable_ipv6": boolean, "ipv4": null | number, "ipv6": null | number } =
-	{
-		"enable_ipv4": false,
-		"enable_ipv6": false,
-		"ipv4": null,
-		"ipv6": null
-	};
-
-	if(ipv4 !== 'none' && available_ips)
-	{
-		ip_config.enable_ipv4 = true;
-
-		if(ipv4 !== 'new')
-		{
-			const ipv4_id = get_ip_id(ipv4, 'ipv4', available_ips);
-			if(typeof ipv4_id === 'number')
-			{
-				ip_config.ipv4 = ipv4_id;
-			}
-		}
-	}
-
-	if(ipv6 !== 'none' && available_ips)
-	{
-		ip_config.enable_ipv6 = true;
-
-		if(ipv6 !== 'new')
-		{
-			const ipv6_id = get_ip_id(ipv6, 'ipv6', available_ips);
-			if(typeof ipv6_id === 'number')
-			{
-				ip_config.ipv6 = ipv6_id;
-			}
-		}
-	}
+	const ip_config = ip_config_to_hetzner_format(ipv4, ipv6, available_ips);
 
 	const spinner = ora({text: `Initializing ${server.name}...`, spinner: 'point', color: 'cyan'}).start();
 	try
 	{
 		const new_server_details = await spin_up_server(snapshot_id, server.name, type, location, ssh_keys, ip_config);
 
-		return new Promise(
-			function (resolve)
-			{
-				const check_on_server = setInterval(
-					async function ()
-					{
-						const server_details = await get_server(new_server_details.id);
-						
-						if(server_details.status === 'starting')
-						{
-							spinner.color = 'green';
-						}
-						
-						if(server_details.status !== 'running')
-						{
-							const capitalized_status = String(server_details.status).charAt(0).toUpperCase() + String(server_details.status).slice(1);
-							spinner.text = `${capitalized_status} ${server.name}...`;
-							return;
-						}
-
-
-						clearInterval(check_on_server);
-						spinner.stop();
-
-						if(server_details.ips.ipv4)
-						{
-							ipv4 = server_details.ips.ipv4.ip;
-						}
-
-						if(server_details.ips.ipv6)
-						{
-							ipv6 = server_details.ips.ipv6.ip;
-						}
-
-						try
-						{
-							update_config_for_server(
-								server, 
-								{
-									name: server_details.name, 
-									location: server_details.location, 
-									type: server_details.type,
-									ssh_keys: ssh_keys,
-									ipv4,
-									ipv6,
-								}
-							);
-						}
-						catch{}
-
-						if(new_server_details.root_password)
-						{
-							await show_info(`Root password for ${server.name}: ${chalk.cyan(new_server_details.root_password)} It will not be shown again!`);
-						}
-
-						resolve(server_details);
-					},
-					2000
-				);
-			}
-		);
+		return await spin_up_visual(new_server_details, spinner, ssh_keys, ipv4, ipv6);
 	}
 	catch (error)
 	{
@@ -886,6 +907,32 @@ export async function get_available_os_images(max_disk_size?: number, architectu
 		spinner.stop();
 		return {raw_os_images, app_images};
 
+	}
+	catch (error)
+	{
+		spinner.stop();
+		throw new Error(error_to_string(error));
+	}
+}
+
+export async function create_new_server(
+						name: string,
+						type: string, 
+						image: number,
+						location: string,
+						ssh_keys: string[], 
+						ipv4: string,
+						ipv6: string,
+						available_ips?: { ipv4: PrimaryIP[]; ipv6: PrimaryIP[]; })
+{
+	const ip_config = ip_config_to_hetzner_format(ipv4, ipv6, available_ips);
+
+	const spinner = ora({text: `Initializing ${name}...`, spinner: 'point', color: 'cyan'}).start();
+	try
+	{
+		const new_server_details = await spin_up_server(image, name, type, location, ssh_keys, ip_config);
+
+		return await spin_up_visual(new_server_details, spinner, ssh_keys, ipv4, ipv6);
 	}
 	catch (error)
 	{

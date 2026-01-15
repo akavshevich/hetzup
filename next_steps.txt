@@ -69,3 +69,4 @@ Implement getting a list of OS images
 Filter OS images by OS and architecture
 Filter out deprecated servers from the server type list for location
 Implement default OS image config
+Implement creating a new server
