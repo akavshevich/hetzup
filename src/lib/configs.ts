@@ -25,7 +25,13 @@ const ServerConfig = type(
 				"ipv6?": "string", 
 				"location?": "string",
 				"ssh_keys?": "string[]",
-				"last_update": "number"
+				"last_update": "number",
+				"ports?": 
+				{
+					"ssh?": {"local": "0 < number < 65535", "remote": "0 < number < 65535"},
+					"http?": {"local": "0 < number < 65535", "remote": "0 < number < 65535"},
+					"https?": {"local": "0 < number < 65535", "remote": "0 < number < 65535"}
+				}
 			}, "[]")
 	}
 );

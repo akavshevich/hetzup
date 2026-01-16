@@ -1,6 +1,6 @@
-Add ports config for servers
-Create daemonizable SSH tunnel
-Check for if servers are running or stopped
+Create UI for configuring ports upon creating a new server
+Add port reconfiguration to server actions
+Handle Nginx configs
 Implement rename server
 Implement rename server UI
 
@@ -70,3 +70,4 @@ Filter out deprecated servers from the server type list for location
 Implement default OS image config
 Implement creating a new server
 Add create new server UI
+Add ports config for servers
