@@ -95,6 +95,23 @@ export async function generate_server_list(): Promise< ServerList >
 		);
 		
 	}
+
+	const servers_in_config = read_server_config();
+	if(servers_in_config && servers.size > 0)
+	{
+		for (let i = 0; i < servers_in_config.servers.length; i++)
+		{
+			const server_in_config = servers_in_config.servers[i];
+			if(!servers.has(server_in_config.name))
+			{
+				delete servers_in_config.servers[i];
+			}
+		}
+
+		const new_server_config = servers_in_config.servers.filter(function (e) {return e;});
+		update_server_config({servers: new_server_config});
+	}
+
 	return servers;
 }
 
