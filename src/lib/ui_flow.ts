@@ -234,8 +234,18 @@ export async function server_actions(server: Server, action: string | number | f
 				}
 				else if(action === 'delete_snapshots')
 				{
-					const confirm_delete_snapshot = await confirm_dangerous(
+					let confirm_delete_snapshot;
+					if(server.snapshots.length === 1 && server.status === 'inactive')
+					{
+						confirm_delete_snapshot = await confirm_dangerous(
+						`${server.name} is not running and has no other snapshots! This will remove ${server.name} completely! Are you sure?`, true);
+					}
+					else
+					{
+						confirm_delete_snapshot = await confirm_dangerous(
 						`Are you sure you want to delete ${format_date(snapshot_details.date)} snapshot for ${server.name}?`);
+					}
+
 					if(!confirm_delete_snapshot)
 					{
 						server_actions(server);
