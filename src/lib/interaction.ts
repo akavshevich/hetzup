@@ -4,12 +4,13 @@ import input from '@inquirer/input';
 import { checkbox, Separator } from '@inquirer/prompts';
 import { NewServerConfig, OSImage, PrimaryIP, Server, ServerList, ServerType } from './types';
 import chalk from 'chalk';
-import { read_hetzner_config, read_server_config, update_hetzner_config } from './configs';
+import { PortsConfig, read_hetzner_config, read_server_config, update_hetzner_config } from './configs';
 import { call_hetzner_api, get_available_server_types, get_locations, get_running_servers, get_snapshot, get_ssh_keys } from './api_calls';
 import ora from 'ora';
-import { generate_server_list, get_available_os_images, get_reverse_of_last_server_status_change, load_available_server_types } from './server_actions';
+import { generate_server_list, get_available_os_images, get_reverse_of_last_server_status_change, load_available_server_types, create_config_for_server } from './server_actions';
 import { server_actions } from './ui_flow';
 import is_valid_hostname from 'is-valid-hostname';
+import { check as is_port_in_use } from 'tcp-port-used';
 
 
 export async function get_text_response(prompt: string): Promise<string>
@@ -858,83 +859,82 @@ export async function new_server_confirmation(
 	}
 
 	const change_selected = await get_select_response('Config', available_changes);
+
 	if(!change_selected)
 	{
 		return false;
 	}
-	else
+
+	switch (change_selected)
 	{
-		switch (change_selected)
-		{
-			case 'no_changes':
-				return new_server_config;
-			case 'location':
-				const new_location = await select_location();
-				if(new_location)
-				{
-					new_server_config.location = new_location;
-				}
-				return await new_server_confirmation(new_server_config, available_ips, available_server_types);
+		case 'no_changes':
+			return new_server_config;
+		case 'location':
+			const new_location = await select_location();
+			if(new_location)
+			{
+				new_server_config.location = new_location;
+			}
+			return await new_server_confirmation(new_server_config, available_ips, available_server_types);
 
-			case 'type':
-				const new_type = await select_server_type(available_server_types);
-				if(new_type)
-				{
-					new_server_config.type = new_type;
-				}
-				return await new_server_confirmation(new_server_config, available_ips, available_server_types);
+		case 'type':
+			const new_type = await select_server_type(available_server_types);
+			if(new_type)
+			{
+				new_server_config.type = new_type;
+			}
+			return await new_server_confirmation(new_server_config, available_ips, available_server_types);
 
-			case 'pref_os':
-				const new_image = await select_os();
-				if(new_image)
-				{
-					new_server_config.os_image = new_image.id;
-					available_server_types = await load_available_server_types(new_server_config.location, new_image.architecture);
+		case 'pref_os':
+			const new_image = await select_os();
+			if(new_image)
+			{
+				new_server_config.os_image = new_image.id;
+				available_server_types = await load_available_server_types(new_server_config.location, new_image.architecture);
 
-					let still_available = false;
-					for (const server_type of available_server_types)
+				let still_available = false;
+				for (const server_type of available_server_types)
+				{
+					if(server_type.name === new_server_config.type)
 					{
-						if(server_type.name === new_server_config.type)
-						{
-							still_available = true;
-						}
+						still_available = true;
 					}
+				}
 
-					if(!still_available)
+				if(!still_available)
+				{
+					if(available_server_types.length > 0)
 					{
-						if(available_server_types.length > 0)
+						new_server_config.type = available_server_types[0].name;
+					}
+					else
+					{
+						if(new_image.architecture === 'x86')
 						{
-							new_server_config.type = available_server_types[0].name;
+							new_server_config.type = 'cx23';
 						}
 						else
 						{
-							if(new_image.architecture === 'x86')
-							{
-								new_server_config.type = 'cx23';
-							}
-							else
-							{
-								new_server_config.type = 'cax11';
-							}
+							new_server_config.type = 'cax11';
 						}
 					}
 				}
-				return await new_server_confirmation(new_server_config, available_ips, available_server_types);
+			}
+			return await new_server_confirmation(new_server_config, available_ips, available_server_types);
 
-			case 'ssh_keys':
-				const ssh_keys = await select_ssh_keys(new_server_config.ssh_keys);
-				new_server_config.ssh_keys = ssh_keys;
-				return await new_server_confirmation(new_server_config, available_ips, available_server_types);
+		case 'ssh_keys':
+			const ssh_keys = await select_ssh_keys(new_server_config.ssh_keys);
+			new_server_config.ssh_keys = ssh_keys;
+			return await new_server_confirmation(new_server_config, available_ips, available_server_types);
 
-			case 'ip':
-				const selected_ips = await select_ips(available_ips, ipv4, ipv6);
-				new_server_config.ipv4 = selected_ips.ipv4;
-				new_server_config.ipv6 = selected_ips.ipv6;
-				return await new_server_confirmation(new_server_config, available_ips, available_server_types);
+		case 'ip':
+			const selected_ips = await select_ips(available_ips, ipv4, ipv6);
+			new_server_config.ipv4 = selected_ips.ipv4;
+			new_server_config.ipv6 = selected_ips.ipv6;
+			return await new_server_confirmation(new_server_config, available_ips, available_server_types);
 
-			default:
-				throw new Error('Unknown server config selection');
-		}
+		default:
+			throw new Error('Unknown server config selection');
 	}
 }
 
@@ -965,4 +965,168 @@ export async function choose_server_name()
 	}
 
 	return server_name;
+}
+
+export async function configure_ports(
+						server: Server, 
+						selected_config?: Required<PortsConfig>)
+{
+	if(!server.ipv4 && ! server.ipv6)
+	{
+		return;
+	}
+
+	if(!selected_config)
+	{
+		selected_config = 
+		{
+			ssh: {local: 0, remote: 22},
+			domains: []
+		};
+
+		const current_server_config = read_server_config();
+		const used_ports = new Set();
+
+		if(current_server_config)
+		{
+			for(const server_details of current_server_config.servers)
+			{
+				if(!server_details.ports || !server_details.ports.ssh)
+				{
+					continue;
+				}
+
+				if(server_details.name === server.name)
+				{
+					selected_config.ssh = {local: server_details.ports.ssh.local, remote: server_details.ports.ssh.remote};
+
+					if(server_details.ports.domains)
+					{
+						selected_config.domains = server_details.ports.domains;
+					}
+
+					continue;
+				}
+
+				used_ports.add(server_details.ports.ssh.local);
+			}
+		}
+
+		for(let port = 1024; port < 32767; port++)
+		{
+			if(used_ports.has(port))
+			{
+				continue;
+			}
+
+			try
+			{
+				const port_in_use = await is_port_in_use(port);
+				if(!port_in_use)
+				{
+					selected_config.ssh.local = port;
+					break;
+				}
+			}
+			catch
+			{
+				continue;
+			}
+		}
+	}
+
+	let ssh_forwarding_display = `SSH forwarding: [${chalk.green(selected_config.ssh.local)}] -> [${chalk.green(selected_config.ssh.remote)}]`;
+
+	if(selected_config.ssh.local === 0)
+	{
+		ssh_forwarding_display = `No SSH forwarding ${chalk.green('[configure]')}`;
+	}
+
+	const port_config_options: SelectInquiryOptions = 
+	[
+		{name: 'Confirm', value: 'no_changes'},
+		new Separator(),
+		{name: ssh_forwarding_display, value: 'ssh_forwarding'},
+		{name: 'Add domain', value: 'add_domain'}
+	];
+
+	for(const domain of selected_config.domains)
+	{
+		port_config_options.push({name: `Remove ${domain}`, value: domain});
+	}
+
+	port_config_options.push(new Separator());
+	port_config_options.push({name: 'Confirm', value: 'no_changes'});
+
+	const config_option_selected = await get_select_response('Reverse proxy setup', port_config_options);
+	switch(config_option_selected)
+	{
+		case 'no_changes':
+			return;
+
+		case 'ssh_forwarding':
+
+			let local_port_option = `Local port: [${chalk.green(selected_config.ssh.local)}]`;
+			if(selected_config.ssh.local === 0)
+			{
+				local_port_option = 'Select local port';
+			}
+
+			const ssh_forwarding_options: SelectInquiryOptions = 
+			[
+				{name: local_port_option, value: 'local'},
+				{name: `Port on ${server.name}: [${chalk.green(selected_config.ssh.remote)}]`, value: 'remote'},
+				{name: 'Disable', value: 'disable'},
+				{name: 'Back', value: 0}
+			];
+
+			const forwarding_option_selected = await get_select_response('Configure SSH forwarding', ssh_forwarding_options);
+
+			switch (forwarding_option_selected) 
+			{
+				case 'local':
+				case 'remote':
+					let port_restriction = ' (between 1024 and 32767)';
+					if(forwarding_option_selected === 'remote')
+					{
+						port_restriction = '';
+					}
+
+					const port_selected_response = await get_text_response(`Select ${forwarding_option_selected} port${port_restriction}: `);
+					const port_selected = parseInt(port_selected_response);
+
+					if(forwarding_option_selected === 'local' && (port_selected < 1024 || port_selected > 32767))
+					{
+						await show_error('Port number must be between 1024 and 32767');
+						return await configure_ports(server, selected_config);
+					}
+
+					selected_config.ssh[forwarding_option_selected] = port_selected;
+					return await configure_ports(server, selected_config);
+
+				case 'disable':
+					selected_config.ssh.local = 0;
+					return await configure_ports(server, selected_config);
+				
+				default:
+					return await configure_ports(server, selected_config);
+			}
+
+		case 'add_domain':
+			const domain_name = await get_text_response(`Domain name to forward to ${server.name}:`);
+			if(!is_valid_hostname(domain_name))
+			{
+				await show_error(`${domain_name} is not a valid domain name`);
+				return await configure_ports(server, selected_config);
+			}
+
+			if(!selected_config.domains.includes(domain_name))
+			{
+				selected_config.domains.push(domain_name);
+			}
+			return await configure_ports(server, selected_config);
+		
+		default:
+			return;
+	}
 }

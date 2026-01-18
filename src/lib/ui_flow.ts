@@ -81,6 +81,7 @@ export async function main(navigate_to?: string)
 					preselected_config.available_ips
 				);
 
+				main('servers');
 				break;
 
 			case 'configure':

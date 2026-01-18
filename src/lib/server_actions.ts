@@ -1,6 +1,6 @@
 import ora, { Ora } from 'ora';
 
-import { read_hetzner_config, read_server_config, update_server_config } from './configs';
+import { read_hetzner_config, read_server_config, ServerConfig, update_server_config } from './configs';
 import { log_error, error_to_string, sleep, format_date } from "./utils";
 import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image, get_primary_ips, delete_primary_ip, change_ip_auto_delete_status, get_os_images } from './api_calls';
 import { NewServerConfig, NewServerDetails, OSImage, PrimaryIP, Server, ServerList, ServerType } from './types';
@@ -165,7 +165,7 @@ export async function stop_server(server: Server, mode: 'save_stop' | 'stop' = '
 			
 			try
 			{
-				update_config_for_server(server);
+				create_config_for_server(server);
 			}
 			catch{}
 		}
@@ -269,7 +269,7 @@ async function spin_up_visual(new_server_details: NewServerDetails, spinner: Ora
 
 						try
 						{
-							update_config_for_server(
+							create_config_for_server(
 								server, 
 								{
 									name: server_details.name, 
@@ -760,7 +760,7 @@ export async function determine_preselected_config(server?: Server, location?: s
 	}
 }
 
-export function update_config_for_server(server: Server, new_config?: NewServerConfig)
+export function create_config_for_server(server: Server, new_config?: NewServerConfig)
 {
 	let current_server_config = read_server_config();
 
@@ -776,7 +776,7 @@ export function update_config_for_server(server: Server, new_config?: NewServerC
 				{
 					current_server_config.servers[index].type = new_config.type;
 
-					if(new_config.ipv4 !== 'new' && new_config.ipv6 !== 'none')
+					if(new_config.ipv4 !== 'new' && new_config.ipv4 !== 'none')
 					{
 						current_server_config.servers[index].ipv4 = new_config.ipv4;
 					}
@@ -876,6 +876,12 @@ export function update_config_for_server(server: Server, new_config?: NewServerC
 
 	update_server_config(current_server_config);
 }
+
+// export function update_config_for_server(server: Server, new_config: Partial<ServerConfig>)
+// {
+// 	let current_server_config = read_server_config();
+
+// }
 
 export async function get_reverse_of_last_server_status_change(): Promise<{server: Server, reverse_action: "spin_up_last" | "save_stop"} | false>
 {

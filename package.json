@@ -1,6 +1,7 @@
 {
   "devDependencies": {
     "@types/node": "^24.3.1",
+    "@types/tcp-port-used": "^1.0.4",
     "typescript": "^5.9.2"
   },
   "dependencies": {
@@ -10,6 +11,7 @@
     "chalk": "^5.6.2",
     "inquirer": "^13.0.1",
     "is-valid-hostname": "^1.0.2",
-    "ora": "^9.0.0"
+    "ora": "^9.0.0",
+    "tcp-port-used": "^1.0.2"
   }
 }

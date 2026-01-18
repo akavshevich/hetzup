@@ -14,8 +14,29 @@ const HetznerConfig = type(
 );
 type HetznerConfig = typeof HetznerConfig.infer;
 
+export const PortsConfig = type(
+	{
+		"ssh?": {"local": "0 < number < 65535", "remote": "0 < number < 65535"},
+		"domains?": "string[]"
+	}
+);
+export type PortsConfig = typeof PortsConfig.infer;
 
-const ServerConfig = type(
+export const ServerConfig = type(
+	{
+		name: "string | number", 
+		"type?": "string", 
+		"ipv4?": "string", 
+		"ipv6?": "string", 
+		"location?": "string",
+		"ssh_keys?": "string[]",
+		"last_update": "number",
+		"ports?": PortsConfig
+	}
+);
+export type ServerConfig = typeof ServerConfig.infer;
+
+const ServersConfig = type(
 	{
 		"servers": type(
 			{
@@ -26,16 +47,11 @@ const ServerConfig = type(
 				"location?": "string",
 				"ssh_keys?": "string[]",
 				"last_update": "number",
-				"ports?": 
-				{
-					"ssh?": {"local": "0 < number < 65535", "remote": "0 < number < 65535"},
-					"http?": {"local": "0 < number < 65535", "remote": "0 < number < 65535"},
-					"https?": {"local": "0 < number < 65535", "remote": "0 < number < 65535"}
-				}
+				"ports?": PortsConfig
 			}, "[]")
 	}
 );
-type ServerConfig = typeof ServerConfig.infer;
+type ServersConfig = typeof ServersConfig.infer;
 
 
 export function read_hetzner_config(): HetznerConfig | false
@@ -60,12 +76,12 @@ export function read_hetzner_config(): HetznerConfig | false
 	}
 }
 
-export function read_server_config(): ServerConfig | false
+export function read_server_config(): ServersConfig | false
 {
 	try
 	{
 		const server_config_raw = JSON.parse(fs.readFileSync('servers.json', 'utf-8'));
-		const server_config = ServerConfig(server_config_raw);
+		const server_config = ServersConfig(server_config_raw);
 
 		if(server_config instanceof type.errors)
 		{
@@ -90,7 +106,7 @@ export function update_hetzner_config(updates: Partial<HetznerConfig>)
 	fs.writeFileSync('hetzner_config.json', JSON.stringify(config, null, 2), 'utf-8');
 }
 
-export function update_server_config(updates: Partial<ServerConfig>)
+export function update_server_config(updates: Partial<ServersConfig>)
 {
 	const config = JSON.parse(fs.readFileSync('servers.json', 'utf-8'));
 	Object.assign(config, updates);
@@ -158,12 +174,12 @@ function repair_config(config: 'hetzner' | 'servers', errors?: ArkErrors)
 
 			if(!errors)
 			{
-				const blank_config: ServerConfig = {servers: []};
+				const blank_config: ServersConfig = {servers: []};
 				fs.writeFileSync('servers.json', JSON.stringify(blank_config, null, 2), 'utf-8');
 				break;
 			}
 
-			const server_fixes: Partial<ServerConfig> = {};
+			const server_fixes: Partial<ServersConfig> = {};
 			for (let index = 0; index < errors.length; index++)
 			{
 				const error = errors[index];
