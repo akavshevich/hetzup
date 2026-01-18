@@ -38,17 +38,7 @@ export type ServerConfig = typeof ServerConfig.infer;
 
 const ServersConfig = type(
 	{
-		"servers": type(
-			{
-				name: "string | number", 
-				"type?": "string", 
-				"ipv4?": "string", 
-				"ipv6?": "string", 
-				"location?": "string",
-				"ssh_keys?": "string[]",
-				"last_update": "number",
-				"ports?": PortsConfig
-			}, "[]")
+		"servers": type(ServerConfig, "[]")
 	}
 );
 type ServersConfig = typeof ServersConfig.infer;

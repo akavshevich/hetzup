@@ -877,11 +877,32 @@ export function create_config_for_server(server: Server, new_config?: NewServerC
 	update_server_config(current_server_config);
 }
 
-// export function update_config_for_server(server: Server, new_config: Partial<ServerConfig>)
-// {
-// 	let current_server_config = read_server_config();
+export function update_config_for_server(server: Server, new_config: Partial<ServerConfig>)
+{
+	let current_server_config = read_server_config();
+	if(!current_server_config)
+	{
+		create_config_for_server(server);
+		current_server_config = read_server_config();
+	}
 
-// }
+	if(!current_server_config)
+	{
+		throw new Error('Failed to read config');
+	}
+
+	for (const server_in_config of current_server_config.servers)
+	{
+		if(server_in_config.name !== server.name)
+		{
+			continue;
+		}
+
+		Object.assign(server_in_config, new_config);
+	}
+
+	update_server_config(current_server_config);
+}
 
 export async function get_reverse_of_last_server_status_change(): Promise<{server: Server, reverse_action: "spin_up_last" | "save_stop"} | false>
 {

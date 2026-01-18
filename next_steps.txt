@@ -72,3 +72,4 @@ Add create new server UI
 Add ports config for servers
 Delete server from config file when it no longer exists in either active or inactive state
 Create UI for configuring ports upon creating a new server
+Save ports config

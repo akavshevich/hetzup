@@ -7,7 +7,7 @@ import chalk from 'chalk';
 import { PortsConfig, read_hetzner_config, read_server_config, update_hetzner_config } from './configs';
 import { call_hetzner_api, get_available_server_types, get_locations, get_running_servers, get_snapshot, get_ssh_keys } from './api_calls';
 import ora from 'ora';
-import { generate_server_list, get_available_os_images, get_reverse_of_last_server_status_change, load_available_server_types, create_config_for_server } from './server_actions';
+import { generate_server_list, get_available_os_images, get_reverse_of_last_server_status_change, load_available_server_types, create_config_for_server, update_config_for_server } from './server_actions';
 import { server_actions } from './ui_flow';
 import is_valid_hostname from 'is-valid-hostname';
 import { check as is_port_in_use } from 'tcp-port-used';
@@ -1062,6 +1062,7 @@ export async function configure_ports(
 	switch(config_option_selected)
 	{
 		case 'no_changes':
+			update_config_for_server(server, {ports: selected_config});
 			return;
 
 		case 'ssh_forwarding':
@@ -1127,6 +1128,7 @@ export async function configure_ports(
 			return await configure_ports(server, selected_config);
 		
 		default:
+			update_config_for_server(server, {ports: selected_config});
 			return;
 	}
 }
