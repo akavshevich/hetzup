@@ -1,5 +1,5 @@
 import ora from "ora";
-import { configure_api_key, select_ssh_keys, configure_ip_retention, select_location, confirm_dangerous, decide_to_keep_ips, select_server, show_config, show_error, show_main_menu, show_server_actions, show_snapshots, new_server_confirmation, select_os, choose_server_name } from "./interaction";
+import { configure_api_key, select_ssh_keys, configure_ip_retention, select_location, confirm_dangerous, decide_to_keep_ips, select_server, show_config, show_error, show_main_menu, show_server_actions, show_snapshots, new_server_confirmation, select_os, choose_server_name, configure_ports } from "./interaction";
 import { complete_server_removal, create_new_server, delete_snapshot_visual, determine_preselected_config, generate_server_list, get_snapshot_details, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server, update_ip_retention_policy } from "./server_actions";
 import { Server } from "./types";
 import { error_to_string, format_date, sleep } from "./utils";
@@ -70,7 +70,7 @@ export async function main(navigate_to?: string)
 					break;
 				}
 
-				await create_new_server(
+				const new_server = await create_new_server(
 					server_name, 
 					confirmed_config.type, 
 					confirmed_config.os_image,
@@ -80,6 +80,8 @@ export async function main(navigate_to?: string)
 					confirmed_config.ipv6,
 					preselected_config.available_ips
 				);
+
+				await configure_ports(new_server);
 
 				main('servers');
 				break;
@@ -270,6 +272,11 @@ export async function server_actions(server: Server, action: string | number | f
 					return;
 				}
 
+				main('servers');
+				return;
+
+			case 'configure_ports':
+				await configure_ports(server);
 				main('servers');
 				return;
 

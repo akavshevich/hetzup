@@ -154,6 +154,7 @@ export async function show_server_actions(server: Server): Promise<string | numb
 	}
 
 	server_actions_list.push({name: 'Select snapshot(s) to delete', value: 'delete_snapshots'});
+	server_actions_list.push({name: 'Configure reverse proxy', value: 'configure_ports'});
 	server_actions_list.push({name: chalk.red('Delete completely'), value: 'delete_completely'});
 	server_actions_list.push(new Separator());
 	server_actions_list.push({name: 'Back', value: 0});
@@ -971,7 +972,7 @@ export async function configure_ports(
 						server: Server, 
 						selected_config?: Required<PortsConfig>)
 {
-	if(!server.ipv4 && ! server.ipv6)
+	if(!server.ipv4 && !server.ipv6)
 	{
 		return;
 	}
@@ -1012,25 +1013,28 @@ export async function configure_ports(
 			}
 		}
 
-		for(let port = 1024; port < 32767; port++)
+		if(selected_config.ssh.local === 0)
 		{
-			if(used_ports.has(port))
+			for(let port = 1024; port < 32767; port++)
 			{
-				continue;
-			}
-
-			try
-			{
-				const port_in_use = await is_port_in_use(port);
-				if(!port_in_use)
+				if(used_ports.has(port))
 				{
-					selected_config.ssh.local = port;
-					break;
+					continue;
 				}
-			}
-			catch
-			{
-				continue;
+
+				try
+				{
+					const port_in_use = await is_port_in_use(port);
+					if(!port_in_use)
+					{
+						selected_config.ssh.local = port;
+						break;
+					}
+				}
+				catch
+				{
+					continue;
+				}
 			}
 		}
 	}
@@ -1128,6 +1132,23 @@ export async function configure_ports(
 			return await configure_ports(server, selected_config);
 		
 		default:
+			if(typeof config_option_selected === 'string' && selected_config.domains.includes(config_option_selected))
+			{
+				selected_config.domains = selected_config.domains.filter(
+					function(existing_domain)
+					{
+						if(config_option_selected === existing_domain)
+						{
+							return false;
+						}
+
+						return true;
+					}
+				);
+
+				return await configure_ports(server, selected_config);
+			}
+
 			update_config_for_server(server, {ports: selected_config});
 			return;
 	}

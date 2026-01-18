@@ -500,7 +500,28 @@ export async function get_server(server_id: number)
 
 		const server = server_details.response.server;
 
-		const server_info = 
+		let ipv4 = 'none';
+		if(server.public_net.ipv4)
+		{
+			ipv4 = server.public_net.ipv4.ip;
+		}
+
+		let ipv6 = 'none';
+		if(server.public_net.ipv6)
+		{
+			ipv6 = server.public_net.ipv6.ip;
+		}
+
+		type WithDetailedIPData = 
+		{
+			ips: 
+			{
+				ipv4: { ip: string; id: number; } | null;
+				ipv6: { ip: string; id: number; } | null;
+			}
+		}
+
+		const server_info: Required<Server> & WithDetailedIPData = 
 		{
 			id: server.id,
 			name: server.name,
@@ -511,7 +532,9 @@ export async function get_server(server_id: number)
 			status: server.status,
 			snapshots: [],
 			location: server.location.name,
-			ips: server.public_net
+			ips: server.public_net,
+			ipv4,
+			ipv6
 		};
 
 		return server_info;

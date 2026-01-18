@@ -248,14 +248,14 @@ async function spin_up_visual(new_server_details: NewServerDetails, spinner: Ora
 						clearInterval(check_on_server);
 						spinner.stop();
 
-						if(server_details.ips.ipv4)
+						if(server_details.ipv4 !== 'none')
 						{
-							ipv4 = server_details.ips.ipv4.ip;
+							ipv4 = server_details.ipv4;
 						}
 
-						if(server_details.ips.ipv6)
+						if(server_details.ipv6 !== 'none')
 						{
-							ipv6 = server_details.ips.ipv6.ip;
+							ipv6 = server_details.ipv6;
 						}
 
 						const server: Server = 
