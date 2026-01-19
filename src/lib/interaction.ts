@@ -977,6 +977,8 @@ export async function configure_ports(
 		return;
 	}
 
+	const used_ports = new Set();
+
 	if(!selected_config)
 	{
 		selected_config = 
@@ -986,7 +988,6 @@ export async function configure_ports(
 		};
 
 		const current_server_config = read_server_config();
-		const used_ports = new Set();
 
 		if(current_server_config)
 		{
@@ -1103,6 +1104,12 @@ export async function configure_ports(
 					if(forwarding_option_selected === 'local' && (port_selected < 1024 || port_selected > 32767))
 					{
 						await show_error('Port number must be between 1024 and 32767');
+						return await configure_ports(server, selected_config);
+					}
+
+					if(forwarding_option_selected === 'local' && (used_ports.has(port_selected) || await is_port_in_use(port_selected)))
+					{
+						await show_error(`Port ${port_selected} is already in use!`);
 						return await configure_ports(server, selected_config);
 					}
 

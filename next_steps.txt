@@ -1,4 +1,6 @@
-Handle Nginx configs
+Create a template for SSH and domain nginx config
+Implement creating nginx config
+Implement enabling/disabling nginx config
 Implement rename server
 Implement rename server UI
 
@@ -72,3 +74,4 @@ Add ports config for servers
 Delete server from config file when it no longer exists in either active or inactive state
 Create UI for configuring ports upon creating a new server
 Save ports config
+Check if local port is in use when configuring ports
