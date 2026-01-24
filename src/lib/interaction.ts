@@ -221,7 +221,7 @@ export async function show_main_menu(): Promise< string | number >
 		}
 	}
 
-	const selected_menu_option = await get_select_response('Welcome to Hetzner Server Manager!', main_menu);
+	const selected_menu_option = await get_select_response('Welcome to Hetzup!', main_menu);
 
 	if(reverse_last && selected_menu_option === 'reverse_action')
 	{
