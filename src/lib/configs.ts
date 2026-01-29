@@ -1,6 +1,7 @@
 import fs from 'fs';
 import { ArkErrors, type } from "arktype";
 import { error_to_string } from './utils';
+import { Server } from './types';
 
 const HetznerConfig = type(
 	{
@@ -198,4 +199,169 @@ function repair_config(config: 'hetzner' | 'servers', errors?: ArkErrors)
 		default:
 			throw new Error('Unknown config');
 	}
+}
+
+export function create_nginx_config(server: Server, ports_config: PortsConfig)
+{
+	if(server.status !== 'running')
+	{
+		throw new Error(`${server.name} is currently inactive.`);
+	}
+
+	let remote_ip: false | string = false;
+	if(server.ipv4)
+	{
+		remote_ip = server.ipv4;
+	}
+	else if(server.ipv6)
+	{
+		remote_ip = `[${server.ipv6.replace('/64', '1')}]`;
+	}
+	
+	if(!remote_ip)
+	{
+		throw new Error(`${server.name} has no reachable IP address!`);
+	}
+
+	try
+	{
+		fs.accessSync('/etc/nginx/', fs.constants.R_OK | fs.constants.W_OK);
+		fs.accessSync('/etc/nginx/nginx.conf', fs.constants.R_OK | fs.constants.W_OK);
+		fs.accessSync('/etc/nginx/sites-available/', fs.constants.R_OK | fs.constants.W_OK);
+		fs.accessSync('/etc/nginx/sites-enabled/', fs.constants.R_OK | fs.constants.W_OK);
+	}
+	catch(error)
+	{
+		throw new Error('Nginx is either not installed or Hetzup has no access to /etc/nginx/ folder!');
+	}
+
+	try
+	{
+		if(!fs.existsSync('/etc/nginx/hetzup/'))
+		{
+			fs.mkdirSync('/etc/nginx/hetzup');
+
+			if(!fs.existsSync('/etc/nginx/hetzup/'))
+			{
+				throw new Error('Failed to create /etc/nginx/hetzup/ folder.');
+			}
+		}
+	}
+	catch(error)
+	{
+		throw new Error('Failed to create /etc/nginx/hetzup/ folder.');
+	}
+
+	try
+	{
+		const config_file = fs.readFileSync('/etc/nginx/nginx.conf', 'utf8');
+		const config_file_lines = config_file.split('\n');
+
+		const found_lines = [];
+
+		for (let i = 0; i < config_file_lines.length; i++)
+		{
+			if(config_file_lines[i] === 'include /etc/nginx/hetzup/*;')
+			{
+				found_lines.push({index: i, commented: false});
+			}
+
+			if(config_file_lines[i] === '# include /etc/nginx/hetzup/*;' || config_file_lines[i] === '#include /etc/nginx/hetzup/*;')
+			{
+				found_lines.push({index: i, commented: true});
+			}
+		}
+
+		if(found_lines.length === 0)
+		{
+			config_file_lines.push('	');
+			config_file_lines.push('include /etc/nginx/hetzup/*;');
+		}
+		else
+		{
+			let config_enabled = false;
+			for(const hetzup_include_line of found_lines)
+			{
+				if(hetzup_include_line.commented)
+				{
+					if(!config_enabled)
+					{
+						config_file_lines[hetzup_include_line.index] = 'include /etc/nginx/hetzup/*;';
+						config_enabled = true;
+						continue;
+					}
+					else
+					{
+						delete config_file_lines[hetzup_include_line.index];
+					}
+				}
+				else
+				{
+					if(config_enabled)
+					{
+						delete config_file_lines[hetzup_include_line.index];
+						continue;
+					}
+
+					config_enabled = true;
+				}
+			}
+		}
+
+		const new_nginx_conf = config_file_lines.filter(function (e) {return e;}).join('\n');
+		fs.writeFileSync('/etc/nginx/nginx.conf', new_nginx_conf, 'utf-8');
+	}
+	catch
+	{
+		throw new Error('Failed to read or write to /etc/nginx/nginx.conf');
+	}
+
+	try
+	{
+		if(ports_config.ssh)
+		{
+			let ssh_config = fs.readFileSync('templates/ssh', 'utf8');
+
+			ssh_config = ssh_config.replaceAll('{{server_name}}', server.name.toString());
+			ssh_config = ssh_config.replaceAll('{{remote_ip}}', remote_ip);
+			ssh_config = ssh_config.replaceAll('{{remote_port}}', ports_config.ssh.remote.toString());
+			ssh_config = ssh_config.replaceAll('{{local_port}}', ports_config.ssh.local.toString());
+
+			fs.writeFileSync(`/etc/nginx/hetzup/${server.name}`, ssh_config, 'utf-8');
+		}
+	}
+	catch
+	{
+		throw new Error('Failed to create or update Nginx config for SSH forwarding.');
+	}
+
+	try
+	{
+		if(ports_config.domains && ports_config.domains.length !== 0)
+		{
+			const domain_forwarding_template = fs.readFileSync('templates/http', 'utf8');
+			let server_domains_config = '';
+
+			for (const domain of ports_config.domains)
+			{
+				let domain_config = domain_forwarding_template;
+				domain_config = domain_config.replaceAll('{{domain_name}}', domain);
+				domain_config = domain_config.replaceAll('{{remote_ip}}', remote_ip);
+				server_domains_config = server_domains_config + domain_config;
+			}
+
+			fs.writeFileSync(`/etc/nginx/sites-available/hetzup_${server.name}`, server_domains_config, 'utf-8');
+			if(!fs.existsSync(`/etc/nginx/sites-enabled/hetzup_${server.name}`))
+			{
+				fs.symlinkSync(`/etc/nginx/sites-available/hetzup_${server.name}`, `/etc/nginx/sites-enabled/hetzup_${server.name}`);
+			}
+		}
+	}
+	catch
+	{
+		throw new Error('Failed to create or update Nginx config for domain forwarding.');
+	}
+
+	console.log('OK', ports_config);
+	
 }

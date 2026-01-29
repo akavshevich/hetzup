@@ -11,7 +11,7 @@ server {
 	ssl_certificate_key /etc/letsencrypt/live/{{domain_name}}/privkey.pem;
 
 	location / {
-		proxy_pass http://{{remote_port}}:80;
+		proxy_pass http://{{remote_ip}}:80;
 		proxy_http_version 1.1;
 		proxy_set_header Upgrade $http_upgrade;
 		proxy_set_header Connection 'upgrade';
@@ -27,3 +27,4 @@ server {
         root /var/lib/letsencrypt;
     }
 }
+
