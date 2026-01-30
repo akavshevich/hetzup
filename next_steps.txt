@@ -1,5 +1,4 @@
-Implement checking for certificates and warning
-Implement enabling/disabling nginx config
+Implement nginx reload
 Implement rename server
 Implement rename server UI
 
@@ -76,3 +75,4 @@ Save ports config
 Check if local port is in use when configuring ports
 Create a template for SSH and domain nginx config
 Implement creating nginx config
+Handle SSL config for Nginx

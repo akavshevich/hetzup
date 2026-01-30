@@ -1,14 +1,15 @@
 server {
-    listen      80;
-    server_name {{domain_name}};
-    rewrite     ^   https://$server_name$request_uri? permanent;
+	listen      80;
+	server_name {{domain_name}};
+	rewrite     ^   https://$server_name$request_uri? permanent;
 }
 
 server {
-    listen      443 ssl;
-    server_name {{domain_name}};
-	ssl_certificate /etc/letsencrypt/live/{{domain_name}}/fullchain.pem;
-	ssl_certificate_key /etc/letsencrypt/live/{{domain_name}}/privkey.pem;
+	listen      443 ssl;
+	server_name {{domain_name}};
+
+	{{ssl_certificate}}
+	{{ssl_certificate_key}}
 
 	location / {
 		proxy_pass http://{{remote_ip}}:80;
@@ -16,15 +17,14 @@ server {
 		proxy_set_header Upgrade $http_upgrade;
 		proxy_set_header Connection 'upgrade';
 		proxy_set_header Host $host;
-	    proxy_set_header X-Real-IP $remote_addr;
-	    proxy_set_header X-Client-IP $remote_addr;
-	    proxy_set_header X-Forwarded-Proto https;
-	    proxy_set_header X-Forwarded-For $remote_addr;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Client-IP $remote_addr;
+		proxy_set_header X-Forwarded-Proto https;
+		proxy_set_header X-Forwarded-For $remote_addr;
 		proxy_cache_bypass $http_upgrade;
 	}
 
 	location /.well-known/acme-challenge/ {
-        root /var/lib/letsencrypt;
-    }
+		root /var/lib/letsencrypt;
+	}
 }
-
