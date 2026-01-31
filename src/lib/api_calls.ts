@@ -408,7 +408,6 @@ export async function get_snapshot(snapshot_id: number): Promise< SnapshotDetail
 export async function delete_server(server: Server)
 {
 	const delete_call = await call_hetzner_api(`servers/${server.id}`, 'DELETE');
-	await disable_server_config(server.name);
 	
 	if(delete_call.successful)
 	{

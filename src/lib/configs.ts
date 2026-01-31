@@ -440,8 +440,8 @@ export async function enable_nginx_config(server: Server, ports_config?: PortsCo
 
 export async function handle_ssl(domain: string)
 {
-	let ssl_certificate = '/etc/letsencrypt/live/{{domain_name}}/fullchain.pem;'.replace('{{domain_name}}', domain);
-	let ssl_certificate_key = '/etc/letsencrypt/live/{{domain_name}}/privkey.pem;'.replace('{{domain_name}}', domain);
+	let ssl_certificate = '/etc/letsencrypt/live/{{domain_name}}/fullchain.pem'.replace('{{domain_name}}', domain);
+	let ssl_certificate_key = '/etc/letsencrypt/live/{{domain_name}}/privkey.pem'.replace('{{domain_name}}', domain);
 
 	if(fs.existsSync(ssl_certificate) && fs.existsSync(ssl_certificate_key))
 	{
@@ -466,7 +466,7 @@ export async function handle_ssl(domain: string)
 	try
 	{
 		const exec = promisify(child_process.exec);
-		await exec('openssl req -x509 -newkey rsa:2048 -keyout /etc/nginx/hetzup_ssl/key.pem -out /etc/nginx/hetzup_ssl/cert.pem -days 365 -nodes -subj "/C=XX/ST=StateName/L=CityName/O=CompanyName/OU=CompanySectionName/CN=CommonNameOrHostname"');
+		await exec('openssl req -x509 -newkey rsa:2048 -keyout /etc/nginx/hetzup_ssl/key.pem -out /etc/nginx/hetzup_ssl/cert.pem -days 36500 -nodes -subj "/C=XX/ST=StateName/L=CityName/O=CompanyName/OU=CompanySectionName/CN=CommonNameOrHostname"');
 	}
 	catch
 	{
@@ -488,7 +488,7 @@ async function reload_nginx_config()
 	return;
 }
 
-export async function disable_server_config(server_name: string | number)
+export async function disable_server_config(server_name: string | number, backup: boolean = false)
 {
 	try
 	{
@@ -504,9 +504,24 @@ export async function disable_server_config(server_name: string | number)
 				fs.unlinkSync('/etc/nginx/sites-enabled/' + file);
 			}
 		}
+
+		if(!backup)
+		{
+			return;
+		}
+
+		for (const file of fs.readdirSync('/etc/nginx/sites-available/')) 
+		{
+			if(file.includes(`hetzup_${server_name}_`))
+			{
+				fs.renameSync(`/etc/nginx/sites-available/${file}`, `/etc/nginx/sites-available/${file}_backup${Date.now()}`);
+			}
+		}
 	}
 	catch
 	{
 		throw new Error('Failed to disable domain config for ' + server_name);
 	}
+
+	await reload_nginx_config();
 }

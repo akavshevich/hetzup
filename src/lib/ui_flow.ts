@@ -3,7 +3,7 @@ import { configure_api_key, select_ssh_keys, configure_ip_retention, select_loca
 import { complete_server_removal, create_new_server, delete_snapshot_visual, determine_preselected_config, generate_server_list, get_snapshot_details, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server, update_ip_retention_policy } from "./server_actions";
 import { Server } from "./types";
 import { error_to_string, format_date, sleep } from "./utils";
-import { enable_nginx_config, read_hetzner_config, update_hetzner_config } from "./configs";
+import { disable_server_config, enable_nginx_config, read_hetzner_config, update_hetzner_config } from "./configs";
 import { call_hetzner_api } from "./api_calls";
 import chalk from "chalk";
 
@@ -125,11 +125,11 @@ export async function server_actions(server: Server, action: string | number | f
 		{
 			case 'stop':
 			case 'save_stop':
+				let critical = false;
 
 				if(action === 'stop')
 				{
 					let warning = `Are you sure you want to stop ${server.name} without saving changes?`;
-					let critical = false;
 
 					if(server.snapshots.length === 0)
 					{
@@ -147,8 +147,9 @@ export async function server_actions(server: Server, action: string | number | f
 
 				const ip_retention_decision = await decide_to_keep_ips(server);
 				await update_ip_retention_policy(server, ip_retention_decision.ipv4, ip_retention_decision.ipv6);
-
 				await stop_server(server, action);
+				await disable_server_config(server.name, critical);
+
 				main('servers');
 				return;
 
@@ -238,9 +239,11 @@ export async function server_actions(server: Server, action: string | number | f
 				}
 				else if(action === 'delete_snapshots')
 				{
+					let backup_domain_config = false;
 					let confirm_delete_snapshot;
 					if(server.snapshots.length === 1 && server.status === 'inactive')
 					{
+						backup_domain_config = true;
 						confirm_delete_snapshot = await confirm_dangerous(
 						`${server.name} is not running and has no other snapshots! This will remove ${server.name} completely! Are you sure?`, true);
 					}
@@ -257,6 +260,7 @@ export async function server_actions(server: Server, action: string | number | f
 					}
 
 					await delete_snapshot_visual(snapshot_id);
+					await disable_server_config(server.name, backup_domain_config);
 
 					server.snapshots = server.snapshots.filter(
 						function (snapshot)
@@ -288,10 +292,14 @@ export async function server_actions(server: Server, action: string | number | f
 					`Are you sure you want to completely delete ${server.name} and all its snapshots?`, true);
 				if(confirm_delete_completely)
 				{
-					const ip_retention_decision = await decide_to_keep_ips(server);
-					await update_ip_retention_policy(server, ip_retention_decision.ipv4, ip_retention_decision.ipv6);
+					if(server.status !== 'inactive')
+					{
+						const ip_retention_decision = await decide_to_keep_ips(server);
+						await update_ip_retention_policy(server, ip_retention_decision.ipv4, ip_retention_decision.ipv6);
+					}
 
 					await complete_server_removal(server);
+					await disable_server_config(server.name, true);
 				}
 				main('servers');
 				return;

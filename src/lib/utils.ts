@@ -1,3 +1,5 @@
+import { networkInterfaces } from 'os';
+
 import readline from 'readline';
 import { AxiosError } from "axios";
 
@@ -109,4 +111,36 @@ export function if_null_then_undefined(a: any)
 export function capitalize(string: string)
 {
 	return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+export function get_own_ip()
+{
+	try
+	{
+		const interfaces = networkInterfaces();
+		for (const device in interfaces) 
+		{
+			const net_interface = interfaces[device];
+
+			if(!net_interface)
+			{
+				return '[IP of this server]';
+			}
+
+			for (var i = 0; i < net_interface.length; i++)
+			{
+				const alias = net_interface[i];
+				if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal)
+				{
+					return alias.address;
+				}
+			}
+		}
+	}
+	catch
+	{
+		return '[IP of this server]';
+	}
+
+	return '[IP of this server]';
 }

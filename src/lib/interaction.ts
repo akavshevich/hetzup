@@ -1,4 +1,4 @@
-import { capitalize, clear_prompt, error_to_string, format_date, round_to_precision } from './utils';
+import { capitalize, clear_prompt, error_to_string, format_date, get_own_ip, round_to_precision } from './utils';
 import select from '@inquirer/select';
 import input from '@inquirer/input';
 import { checkbox, Separator } from '@inquirer/prompts';
@@ -1068,6 +1068,12 @@ export async function configure_ports(
 	{
 		case 'no_changes':
 			update_config_for_server(server, {ports: selected_config});
+
+			if(selected_config.ssh)
+			{
+				show_suggested_config(server.name, selected_config.ssh.local);
+			}
+
 			return;
 
 		case 'ssh_forwarding':
@@ -1157,6 +1163,28 @@ export async function configure_ports(
 			}
 
 			update_config_for_server(server, {ports: selected_config});
+
+			if(selected_config.ssh)
+			{
+				show_suggested_config(server.name, selected_config.ssh.local);
+			}
+
 			return;
 	}
+}
+
+async function show_suggested_config(server_name: string | number, local_ssh: number)
+{
+	const ip_of_this_server = get_own_ip();
+	console.log(`To create a persistent connection to ${chalk.green(server_name)}, add this to your ${chalk.cyan('~/.ssh/config')} :`);
+	console.log('');
+	console.log(`Host ${server_name}`);
+	console.log(`  HostName ${ip_of_this_server}`);
+	console.log(`  Port ${local_ssh}`);
+	console.log('  User root');
+	console.log('  StrictHostKeyChecking no');
+	console.log('  UserKnownHostsFile=/dev/null');
+	console.log('');
+	console.log(`Now you can connect to ${chalk.green(server_name)} from your local computer using ${chalk.cyan(`ssh ${server_name}`)} command`);
+	console.log('');
 }
