@@ -81,3 +81,4 @@ Suggest bash config when creating a new server or changing local SSH port
 When completely deleting server (or equivalent) rename nginx domain config files to backup
 Attempt to obtain certificate if certbot is installed
 Add spinner for certbot challenge
+Rename main config

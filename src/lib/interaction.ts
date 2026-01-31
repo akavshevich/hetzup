@@ -4,7 +4,7 @@ import input from '@inquirer/input';
 import { checkbox, Separator } from '@inquirer/prompts';
 import { NewServerConfig, OSImage, PrimaryIP, Server, ServerList, ServerType } from './types';
 import chalk from 'chalk';
-import { PortsConfig, read_hetzner_config, read_server_config, update_hetzner_config } from './configs';
+import { PortsConfig, read_hetzner_config, read_server_config, update_hetzup_config } from './configs';
 import { call_hetzner_api, get_available_server_types, get_locations, get_running_servers, get_snapshot, get_ssh_keys } from './api_calls';
 import ora from 'ora';
 import { generate_server_list, get_available_os_images, get_reverse_of_last_server_status_change, load_available_server_types, create_config_for_server, update_config_for_server } from './server_actions';
@@ -298,7 +298,7 @@ export async function configure_api_key()
 
 	try
 	{
-		update_hetzner_config({api_token: api_key});
+		update_hetzup_config({api_token: api_key});
 	}
 	catch(error)
 	{
@@ -338,7 +338,7 @@ export async function select_location(save_preferred?: boolean)
 
 		if(save_preferred)
 		{
-			update_hetzner_config({preferred_location: selected_location});
+			update_hetzup_config({preferred_location: selected_location});
 		}
 
 		return selected_location;
@@ -437,7 +437,7 @@ export async function select_os(architecture?: 'x86' | 'arm', save_preferred?: b
 			{
 				if(save_preferred)
 				{
-					update_hetzner_config({preferred_os: selected_image.details.id});
+					update_hetzup_config({preferred_os: selected_image.details.id});
 				}
 
 				return {
@@ -506,7 +506,7 @@ export async function select_ssh_keys(current_keys: string[], save_default?: boo
 
 		if(save_default)
 		{
-			update_hetzner_config({ssh_keys: key_names});
+			update_hetzup_config({ssh_keys: key_names});
 		}
 
 		return key_names;
@@ -544,10 +544,10 @@ export async function configure_ip_retention(type: 'ipv4' | 'ipv6')
 		{
 			if(type === 'ipv4')
 			{
-				update_hetzner_config({keep_ipv4: selected_retention_behavior});
+				update_hetzup_config({keep_ipv4: selected_retention_behavior});
 				return;
 			}
-			update_hetzner_config({keep_ipv6: selected_retention_behavior});
+			update_hetzup_config({keep_ipv6: selected_retention_behavior});
 		}
 	}
 	catch (error)

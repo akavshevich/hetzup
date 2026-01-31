@@ -55,12 +55,12 @@ export function read_hetzner_config(): HetznerConfig | false
 {
 	try
 	{
-		const config_raw = JSON.parse(fs.readFileSync('hetzner_config.json', 'utf-8'));
+		const config_raw = JSON.parse(fs.readFileSync('hetzup_config.json', 'utf-8'));
 		const config = HetznerConfig(config_raw);
 
 		if(config instanceof type.errors)
 		{
-			repair_config('hetzner', config);
+			repair_config('hetzup', config);
 			return false;
 		}
 
@@ -68,7 +68,7 @@ export function read_hetzner_config(): HetznerConfig | false
 	}
 	catch
 	{
-		repair_config('hetzner');
+		repair_config('hetzup');
 		return false;
 	}
 }
@@ -95,12 +95,12 @@ export function read_server_config(): ServersConfig | false
 	}
 }
 
-export function update_hetzner_config(updates: Partial<HetznerConfig>)
+export function update_hetzup_config(updates: Partial<HetznerConfig>)
 {
-	const config = JSON.parse(fs.readFileSync('hetzner_config.json', 'utf-8'));
+	const config = JSON.parse(fs.readFileSync('hetzup_config.json', 'utf-8'));
 	Object.assign(config, updates);
 
-	fs.writeFileSync('hetzner_config.json', JSON.stringify(config, null, 2), 'utf-8');
+	fs.writeFileSync('hetzup_config.json', JSON.stringify(config, null, 2), 'utf-8');
 }
 
 export function update_server_config(updates: Partial<ServersConfig>)
@@ -111,16 +111,16 @@ export function update_server_config(updates: Partial<ServersConfig>)
 	fs.writeFileSync('servers.json', JSON.stringify(config, null, 2), 'utf-8');
 }
 
-function repair_config(config: 'hetzner' | 'servers', errors?: ArkErrors)
+function repair_config(config: 'hetzup' | 'servers', errors?: ArkErrors)
 {
 	switch (config)
 	{
-		case 'hetzner':
+		case 'hetzup':
 
 			if(!errors)
 			{
 				const blank_config = {api_token: ""};
-				fs.writeFileSync('hetzner_config.json', JSON.stringify(blank_config, null, 2), 'utf-8');
+				fs.writeFileSync('hetzup_config.json', JSON.stringify(blank_config, null, 2), 'utf-8');
 				break;
 			}
 
@@ -159,7 +159,7 @@ function repair_config(config: 'hetzner' | 'servers', errors?: ArkErrors)
 
 			try
 			{
-				update_hetzner_config(hetzner_fixes);
+				update_hetzup_config(hetzner_fixes);
 			}
 			catch(error)
 			{

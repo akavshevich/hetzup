@@ -1,5 +1,5 @@
 import { configure_ports, get_select_response, new_server_confirmation, select_ips, select_server, show_server_actions, show_snapshots } from './lib/interaction';
-import { enable_nginx_config, handle_ssl, read_hetzner_config, read_server_config, update_hetzner_config, update_server_config } from './lib/configs';
+import { enable_nginx_config, handle_ssl, read_hetzner_config, read_server_config, update_hetzup_config, update_server_config } from './lib/configs';
 import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, delete_server, delete_snapshot, rebuild_server_from_image, get_locations, get_ssh_keys, get_primary_ips, change_ip_auto_delete_status, get_os_images } from './lib/api_calls';
 
 import select, { Separator } from '@inquirer/select';
