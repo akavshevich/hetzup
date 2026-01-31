@@ -7,6 +7,7 @@ import { error_to_string } from './utils';
 import { Server } from './types';
 import { show_info } from './interaction';
 import { read_config_for_server } from './server_actions';
+import ora from 'ora';
 
 const HetznerConfig = type(
 	{
@@ -459,6 +460,8 @@ export async function handle_ssl(domain: string)
 		return {ssl_certificate, ssl_certificate_key, genuine: true};
 	}
 
+	const spinner = ora({text: `Obtain SSL for ${domain}...`, spinner: 'point', color: 'cyan'}).start();
+
 	try
 	{
 		if(fs.existsSync(`/etc/nginx/sites-available/hetzup_temp_ssl_${domain}`))
@@ -491,8 +494,12 @@ export async function handle_ssl(domain: string)
 				}
 			}
 		}
+		spinner.stop();
 	}
-	catch{}
+	catch
+	{
+		spinner.stop();
+	}
 
 	if(fs.existsSync(`/etc/nginx/sites-available/hetzup_temp_ssl_${domain}`))
 	{

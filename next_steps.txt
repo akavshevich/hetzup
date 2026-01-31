@@ -79,3 +79,5 @@ Implement nginx reload, create function that disables server in Nginx config
 Amend Nginx config when reconfiguring ports, starting and stopping a server
 Suggest bash config when creating a new server or changing local SSH port
 When completely deleting server (or equivalent) rename nginx domain config files to backup
+Attempt to obtain certificate if certbot is installed
+Add spinner for certbot challenge
