@@ -1,4 +1,3 @@
-Attempt to obtain certificate if certbot is installed
 Implement rename server (running server, images, server config, nginx config)
 Implement rename server UI
 

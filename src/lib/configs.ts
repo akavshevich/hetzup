@@ -381,6 +381,8 @@ export async function enable_nginx_config(server: Server, ports_config?: PortsCo
 
 			for (const domain of ports_config.domains)
 			{
+				let ssl = await handle_ssl(domain);
+
 				if(fs.existsSync(`/etc/nginx/sites-available/hetzup_${server.name}_${domain}`))
 				{
 					const domain_config = fs.readFileSync(`/etc/nginx/sites-available/hetzup_${server.name}_${domain}`, 'utf8');
@@ -390,7 +392,17 @@ export async function enable_nginx_config(server: Server, ports_config?: PortsCo
 					{
 						if(domain_config_lines[i].includes('proxy_pass http://'))
 						{
-							domain_config_lines[i] = '		proxy_pass http://{{remote_ip}}:80;'.replace('{{remote_ip}}', remote_ip);
+							domain_config_lines[i] = `		proxy_pass http://${remote_ip}:80;`;
+						}
+
+						if(domain_config_lines[i].includes('ssl_certificate '))
+						{
+							domain_config_lines[i] = `		ssl_certificate /etc/letsencrypt/live/${domain}/fullchain.pem;`;
+						}
+
+						if(domain_config_lines[i].includes('ssl_certificate_key'))
+						{
+							domain_config_lines[i] = `		ssl_certificate_key /etc/letsencrypt/live/${domain}/privkey.pem;`;
 						}
 					}
 
@@ -404,7 +416,6 @@ export async function enable_nginx_config(server: Server, ports_config?: PortsCo
 
 				let domain_config = domain_forwarding_template;
 
-				let ssl = await handle_ssl(domain);
 				domain_config = domain_config.replace('{{ssl_certificate}}', `ssl_certificate ${ssl.ssl_certificate};`);
 				domain_config = domain_config.replace('{{ssl_certificate_key}}', `ssl_certificate_key ${ssl.ssl_certificate_key};`);
 
@@ -414,7 +425,7 @@ export async function enable_nginx_config(server: Server, ports_config?: PortsCo
 				if(!ssl.genuine)
 				{
 					await show_info(
-						`Couldn't locate certificate for ${domain}, using self signed. Edit config in /etc/nginx/sites-available/ to add manually.`
+						`Couldn't locate or obtain certificate for ${domain}, using self signed. Edit config in /etc/nginx/sites-available/ to add manually.`
 					);
 				}
 
@@ -440,8 +451,53 @@ export async function enable_nginx_config(server: Server, ports_config?: PortsCo
 
 export async function handle_ssl(domain: string)
 {
-	let ssl_certificate = '/etc/letsencrypt/live/{{domain_name}}/fullchain.pem'.replace('{{domain_name}}', domain);
-	let ssl_certificate_key = '/etc/letsencrypt/live/{{domain_name}}/privkey.pem'.replace('{{domain_name}}', domain);
+	let ssl_certificate = `/etc/letsencrypt/live/${domain}/fullchain.pem`;
+	let ssl_certificate_key = `/etc/letsencrypt/live/${domain}/privkey.pem`;
+
+	if(fs.existsSync(ssl_certificate) && fs.existsSync(ssl_certificate_key))
+	{
+		return {ssl_certificate, ssl_certificate_key, genuine: true};
+	}
+
+	try
+	{
+		if(fs.existsSync(`/etc/nginx/sites-available/hetzup_temp_ssl_${domain}`))
+		{
+			fs.unlinkSync(`/etc/nginx/sites-available/hetzup_temp_ssl_${domain}`);
+		}
+
+		let temp_ssl_config = fs.readFileSync('templates/obtain_ssl', 'utf8');
+		temp_ssl_config = temp_ssl_config.replace('{{domain_name}}', domain);
+		fs.writeFileSync(`/etc/nginx/sites-enabled/hetzup_temp_ssl_${domain}`, temp_ssl_config, 'utf-8');
+		await reload_nginx_config();
+
+		const exec = promisify(child_process.exec);
+		const certbot_response = await exec('certbot certonly --webroot -w /var/lib/letsencrypt -d ' + domain);
+
+		if(certbot_response.stdout)
+		{
+			const certbot_response_lines = certbot_response.stdout.split('\n');
+
+			for (let i = 0; i < certbot_response_lines.length; i++)
+			{
+				if(certbot_response_lines[i].includes('/fullchain.pem'))
+				{
+					ssl_certificate = certbot_response_lines[i].trim();
+				}
+
+				if(certbot_response_lines[i].includes('/privkey.pem'))
+				{
+					ssl_certificate_key = certbot_response_lines[i].trim();
+				}
+			}
+		}
+	}
+	catch{}
+
+	if(fs.existsSync(`/etc/nginx/sites-available/hetzup_temp_ssl_${domain}`))
+	{
+		fs.unlinkSync(`/etc/nginx/sites-available/hetzup_temp_ssl_${domain}`);
+	}
 
 	if(fs.existsSync(ssl_certificate) && fs.existsSync(ssl_certificate_key))
 	{
