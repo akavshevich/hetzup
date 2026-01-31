@@ -142,6 +142,7 @@ export async function show_server_actions(server: Server): Promise<string | numb
 		}
 		
 		server_actions_list.push({name: 'Stop without saving', value: 'stop'});
+		server_actions_list.push({name: 'Configure reverse proxy', value: 'configure_ports'});
 	}
 	else if(server.status === 'inactive')
 	{
@@ -154,7 +155,6 @@ export async function show_server_actions(server: Server): Promise<string | numb
 	}
 
 	server_actions_list.push({name: 'Select snapshot(s) to delete', value: 'delete_snapshots'});
-	server_actions_list.push({name: 'Configure reverse proxy', value: 'configure_ports'});
 	server_actions_list.push({name: chalk.red('Delete completely'), value: 'delete_completely'});
 	server_actions_list.push(new Separator());
 	server_actions_list.push({name: 'Back', value: 0});

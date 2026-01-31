@@ -205,7 +205,7 @@ function repair_config(config: 'hetzner' | 'servers', errors?: ArkErrors)
 	}
 }
 
-export async function create_nginx_config(server: Server, ports_config: PortsConfig)
+export async function enable_nginx_config(server: Server, ports_config: PortsConfig)
 {
 	if(server.status !== 'running')
 	{
@@ -261,36 +261,47 @@ export async function create_nginx_config(server: Server, ports_config: PortsCon
 		const config_file = fs.readFileSync('/etc/nginx/nginx.conf', 'utf8');
 		const config_file_lines = config_file.split('\n');
 
-		const found_lines = [];
+		const found_includes = [];
+		let stream_directive_open_line: number | boolean = false;
 
 		for (let i = 0; i < config_file_lines.length; i++)
 		{
-			if(config_file_lines[i] === 'include /etc/nginx/hetzup/*;')
+			if(config_file_lines[i].trim() === 'include /etc/nginx/hetzup/*;')
 			{
-				found_lines.push({index: i, commented: false});
+				found_includes.push({index: i, commented: false});
 			}
 
-			if(config_file_lines[i] === '# include /etc/nginx/hetzup/*;' || config_file_lines[i] === '#include /etc/nginx/hetzup/*;')
+			if(config_file_lines[i].trim() === '# include /etc/nginx/hetzup/*;' || config_file_lines[i].trim() === '#include /etc/nginx/hetzup/*;')
 			{
-				found_lines.push({index: i, commented: true});
+				found_includes.push({index: i, commented: true});
+			}
+
+			if(config_file_lines[i].trim() === 'stream {' || config_file_lines[i].trim() === 'stream{')
+			{
+				stream_directive_open_line = i;
 			}
 		}
 
-		if(found_lines.length === 0)
+		if(found_includes.length === 0 && !stream_directive_open_line)
 		{
-			config_file_lines.push('	');
-			config_file_lines.push('include /etc/nginx/hetzup/*;');
+			config_file_lines.push('stream {');
+			config_file_lines.push('	include /etc/nginx/hetzup/*;');
+			config_file_lines.push('}');
+		}
+		else if (found_includes.length === 0 && typeof stream_directive_open_line === 'number')
+		{
+			config_file_lines.splice(stream_directive_open_line + 1, 0, '	include /etc/nginx/hetzup/*;');
 		}
 		else
 		{
 			let config_enabled = false;
-			for(const hetzup_include_line of found_lines)
+			for(const hetzup_include_line of found_includes)
 			{
 				if(hetzup_include_line.commented)
 				{
 					if(!config_enabled)
 					{
-						config_file_lines[hetzup_include_line.index] = 'include /etc/nginx/hetzup/*;';
+						config_file_lines[hetzup_include_line.index] = '	include /etc/nginx/hetzup/*;';
 						config_enabled = true;
 						continue;
 					}
@@ -343,7 +354,7 @@ export async function create_nginx_config(server: Server, ports_config: PortsCon
 	{
 		for (const file of fs.readdirSync('/etc/nginx/sites-enabled/')) 
 		{
-			if(file.includes('hetzup_'))
+			if(file.includes(`hetzup_${server.name}_`))
 			{
 				fs.unlinkSync('/etc/nginx/sites-enabled/' + file);
 			}
@@ -379,8 +390,8 @@ export async function create_nginx_config(server: Server, ports_config: PortsCon
 				let domain_config = domain_forwarding_template;
 
 				let ssl = await handle_ssl(domain);
-				domain_config = domain_config.replace('{{ssl_certificate}}', ssl.ssl_certificate);
-				domain_config = domain_config.replace('{{ssl_certificate_key}}', ssl.ssl_certificate_key);
+				domain_config = domain_config.replace('{{ssl_certificate}}', `ssl_certificate ${ssl.ssl_certificate};`);
+				domain_config = domain_config.replace('{{ssl_certificate_key}}', `ssl_certificate_key ${ssl.ssl_certificate_key};`);
 
 				domain_config = domain_config.replaceAll('{{domain_name}}', domain);
 				domain_config = domain_config.replaceAll('{{remote_ip}}', remote_ip);
@@ -399,9 +410,17 @@ export async function create_nginx_config(server: Server, ports_config: PortsCon
 	}
 	catch(error)
 	{
-		console.log(error);
 		throw new Error('Failed to create or update Nginx config for domain forwarding.');
-	}	
+	}
+
+	try
+	{
+		await reload_nginx_config();
+	}
+	catch
+	{
+		throw new Error('Failed to reload Nginx config.');
+	}
 }
 
 export async function handle_ssl(domain: string)
@@ -414,35 +433,62 @@ export async function handle_ssl(domain: string)
 		return {ssl_certificate, ssl_certificate_key, genuine: true};
 	}
 
-	if(!fs.existsSync('/etc/nginx/hetzup/ssl/'))
+	if(!fs.existsSync('/etc/nginx/hetzup_ssl/'))
 	{
-		fs.mkdirSync('/etc/nginx/hetzup/ssl');
+		fs.mkdirSync('/etc/nginx/hetzup_ssl');
 
-		if(!fs.existsSync('/etc/nginx/hetzup/ssl/'))
+		if(!fs.existsSync('/etc/nginx/hetzup_ssl/'))
 		{
-			throw new Error('Failed to create /etc/nginx/hetzup/ssl folder.');
+			throw new Error('Failed to create /etc/nginx/hetzup_ssl folder.');
 		}
 	}
 
-	if(fs.existsSync('/etc/nginx/hetzup/ssl/key.pem') && fs.existsSync('/etc/nginx/hetzup/ssl/cert.pem'))
+	if(fs.existsSync('/etc/nginx/hetzup_ssl/key.pem') && fs.existsSync('/etc/nginx/hetzup_ssl/cert.pem'))
 	{
-		return {ssl_certificate: '/etc/nginx/hetzup/ssl/cert.pem', ssl_certificate_key: '/etc/nginx/hetzup/ssl/key.pem', genuine: false};
+		return {ssl_certificate: '/etc/nginx/hetzup_ssl/cert.pem', ssl_certificate_key: '/etc/nginx/hetzup_ssl/key.pem', genuine: false};
 	}
 
 	try
 	{
 		const exec = promisify(child_process.exec);
-		await exec('openssl req -x509 -newkey rsa:2048 -keyout /etc/nginx/hetzup/ssl/key.pem -out /etc/nginx/hetzup/ssl/cert.pem -days 365 -nodes -subj "/C=XX/ST=StateName/L=CityName/O=CompanyName/OU=CompanySectionName/CN=CommonNameOrHostname"');
+		await exec('openssl req -x509 -newkey rsa:2048 -keyout /etc/nginx/hetzup_ssl/key.pem -out /etc/nginx/hetzup_ssl/cert.pem -days 365 -nodes -subj "/C=XX/ST=StateName/L=CityName/O=CompanyName/OU=CompanySectionName/CN=CommonNameOrHostname"');
 	}
 	catch
 	{
 		throw new Error('OpenSSL command failed to execute');
 	}
 
-	if(!fs.existsSync('/etc/nginx/hetzup/ssl/key.pem') || !fs.existsSync('/etc/nginx/hetzup/ssl/cert.pem'))
+	if(!fs.existsSync('/etc/nginx/hetzup_ssl/key.pem') || !fs.existsSync('/etc/nginx/hetzup_ssl/cert.pem'))
 	{
 		throw new Error('Failed to generate self signed certificate');
 	}
 
-	return {ssl_certificate: '/etc/nginx/hetzup/ssl/cert.pem', ssl_certificate_key: '/etc/nginx/hetzup/ssl/key.pem', genuine: false};
+	return {ssl_certificate: '/etc/nginx/hetzup_ssl/cert.pem', ssl_certificate_key: '/etc/nginx/hetzup_ssl/key.pem', genuine: false};
+}
+
+async function reload_nginx_config()
+{
+	const exec = promisify(child_process.exec);
+	await exec('nginx -s reload');
+	return;
+}
+
+export async function disable_server_config(server_name: string)
+{
+	try
+	{
+		fs.unlinkSync(`/etc/nginx/hetzup/${server_name}`);
+
+		for (const file of fs.readdirSync('/etc/nginx/sites-enabled/')) 
+		{
+			if(file.includes(`hetzup_${server_name}_`))
+			{
+				fs.unlinkSync('/etc/nginx/sites-enabled/' + file);
+			}
+		}
+	}
+	catch
+	{
+		throw new Error('Failed to disable domain config for ' + server_name);
+	}
 }

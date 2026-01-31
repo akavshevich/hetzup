@@ -1,5 +1,6 @@
-Implement nginx reload
-Implement rename server
+Amend Nginx config when starting and stopping a server
+Suggest bash config when creating a new server or changing local SSH port
+Implement rename server (running server, images, server config, nginx config)
 Implement rename server UI
 
 DONE:
@@ -76,3 +77,4 @@ Check if local port is in use when configuring ports
 Create a template for SSH and domain nginx config
 Implement creating nginx config
 Handle SSL config for Nginx
+Implement nginx reload, create function that disables server in Nginx config

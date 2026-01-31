@@ -1,11 +1,10 @@
 # Reverse proxy SSH config for {{server_name}}
-stream {
-    upstream {{server_name}} {
-        server {{remote_ip}}:{{remote_port}};
-    }
 
-    server {
-        listen {{local_port}};
-        proxy_pass {{server_name}};
-    }
+upstream {{server_name}} {
+	server {{remote_ip}}:{{remote_port}};
+}
+
+server {
+	listen {{local_port}};
+	proxy_pass {{server_name}};
 }
