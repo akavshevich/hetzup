@@ -3,7 +3,7 @@ import { configure_api_key, select_ssh_keys, configure_ip_retention, select_loca
 import { complete_server_removal, create_new_server, delete_snapshot_visual, determine_preselected_config, generate_server_list, get_snapshot_details, revert_to_snapshot, save_server_to_snapshot, spin_up_from_snapshot, stop_server, update_ip_retention_policy } from "./server_actions";
 import { Server } from "./types";
 import { error_to_string, format_date, sleep } from "./utils";
-import { read_hetzner_config, update_hetzner_config } from "./configs";
+import { enable_nginx_config, read_hetzner_config, update_hetzner_config } from "./configs";
 import { call_hetzner_api } from "./api_calls";
 import chalk from "chalk";
 
@@ -82,6 +82,7 @@ export async function main(navigate_to?: string)
 				);
 
 				await configure_ports(new_server);
+				await enable_nginx_config(new_server);
 
 				main('servers');
 				break;
@@ -277,6 +278,7 @@ export async function server_actions(server: Server, action: string | number | f
 
 			case 'configure_ports':
 				await configure_ports(server);
+				await enable_nginx_config(server);
 				main('servers');
 				return;
 

@@ -1,4 +1,3 @@
-Amend Nginx config when starting and stopping a server
 Suggest bash config when creating a new server or changing local SSH port
 Implement rename server (running server, images, server config, nginx config)
 Implement rename server UI
@@ -78,3 +77,4 @@ Create a template for SSH and domain nginx config
 Implement creating nginx config
 Handle SSL config for Nginx
 Implement nginx reload, create function that disables server in Nginx config
+Amend Nginx config when reconfiguring ports, starting and stopping a server

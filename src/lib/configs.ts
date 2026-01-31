@@ -6,6 +6,7 @@ import { ArkErrors, type } from "arktype";
 import { error_to_string } from './utils';
 import { Server } from './types';
 import { show_info } from './interaction';
+import { read_config_for_server } from './server_actions';
 
 const HetznerConfig = type(
 	{
@@ -205,7 +206,7 @@ function repair_config(config: 'hetzner' | 'servers', errors?: ArkErrors)
 	}
 }
 
-export async function enable_nginx_config(server: Server, ports_config: PortsConfig)
+export async function enable_nginx_config(server: Server, ports_config?: PortsConfig)
 {
 	if(server.status !== 'running')
 	{
@@ -213,11 +214,11 @@ export async function enable_nginx_config(server: Server, ports_config: PortsCon
 	}
 
 	let remote_ip: false | string = false;
-	if(server.ipv4)
+	if(server.ipv4 && server.ipv4 !== 'none')
 	{
 		remote_ip = server.ipv4;
 	}
-	else if(server.ipv6)
+	else if(server.ipv6 && server.ipv6 !== 'none')
 	{
 		remote_ip = `[${server.ipv6.replace('/64', '1')}]`;
 	}
@@ -225,6 +226,20 @@ export async function enable_nginx_config(server: Server, ports_config: PortsCon
 	if(!remote_ip)
 	{
 		throw new Error(`${server.name} has no reachable IP address!`);
+	}
+
+	if(!ports_config)
+	{
+		const server_config = read_config_for_server(server);
+		if(server_config && server_config.ports)
+		{
+			ports_config = server_config.ports;
+		}
+		else
+		{
+			await disable_server_config(server.name);
+			return;
+		}
 	}
 
 	try
@@ -473,11 +488,14 @@ async function reload_nginx_config()
 	return;
 }
 
-export async function disable_server_config(server_name: string)
+export async function disable_server_config(server_name: string | number)
 {
 	try
 	{
-		fs.unlinkSync(`/etc/nginx/hetzup/${server_name}`);
+		if(fs.existsSync(`/etc/nginx/hetzup/${server_name}`))
+		{
+			fs.unlinkSync(`/etc/nginx/hetzup/${server_name}`);
+		}
 
 		for (const file of fs.readdirSync('/etc/nginx/sites-enabled/')) 
 		{
