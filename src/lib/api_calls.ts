@@ -1,10 +1,9 @@
 import axios from 'axios';
-import { ArkErrors, type } from "arktype";
+import { type } from "arktype";
 
-import { disable_server_config, read_hetzner_config } from "./configs";
-import { log_error, error_to_string, if_null_then_undefined } from "./utils";
+import { read_hetzner_config } from "./configs";
+import { error_to_string, if_null_then_undefined } from "./utils";
 import { NewServerDetails, OSImage, PrimaryIP, Server, ServerType } from "./types";
-import { AxiosError } from 'axios';
 
 const APIResponse = type.or({"successful": "true", "response": "object"}, {"successful": "false", "error": "string"});
 type APIResponse = typeof APIResponse.infer;
@@ -408,7 +407,7 @@ export async function get_snapshot(snapshot_id: number): Promise< SnapshotDetail
 export async function delete_server(server: Server)
 {
 	const delete_call = await call_hetzner_api(`servers/${server.id}`, 'DELETE');
-	
+
 	if(delete_call.successful)
 	{
 		return;

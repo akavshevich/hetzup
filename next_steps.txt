@@ -82,3 +82,4 @@ When completely deleting server (or equivalent) rename nginx domain config files
 Attempt to obtain certificate if certbot is installed
 Add spinner for certbot challenge
 Rename main config
+Clean up index and includes list

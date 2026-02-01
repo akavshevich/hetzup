@@ -1,4 +1,4 @@
-import { ArkErrors, type } from "arktype";
+import { type } from "arktype";
 
 export type ServerStatuses = 'running' | 'initializing' | 'starting' | 'stopping' | 'off' | 'deleting' | 'migrating' | 'rebuilding' | 'unknown' | 'inactive';
 

@@ -3,13 +3,14 @@ import { promisify } from 'node:util';
 import child_process from 'node:child_process';
 
 import { ArkErrors, type } from "arktype";
+import ora from 'ora';
+
 import { error_to_string } from './utils';
 import { Server } from './types';
 import { show_info } from './interaction';
 import { read_config_for_server } from './server_actions';
-import ora from 'ora';
 
-const HetznerConfig = type(
+const HetzupConfig = type(
 	{
 		"api_token": "string",
 		"preferred_location?": "string",
@@ -19,7 +20,7 @@ const HetznerConfig = type(
 		"keep_ipv6": "'yes' | 'no' | 'ask'"
 	}	
 );
-type HetznerConfig = typeof HetznerConfig.infer;
+type HetzupConfig = typeof HetzupConfig.infer;
 
 export const PortsConfig = type(
 	{
@@ -51,12 +52,12 @@ const ServersConfig = type(
 type ServersConfig = typeof ServersConfig.infer;
 
 
-export function read_hetzner_config(): HetznerConfig | false
+export function read_hetzner_config(): HetzupConfig | false
 {
 	try
 	{
 		const config_raw = JSON.parse(fs.readFileSync('hetzup_config.json', 'utf-8'));
-		const config = HetznerConfig(config_raw);
+		const config = HetzupConfig(config_raw);
 
 		if(config instanceof type.errors)
 		{
@@ -95,7 +96,7 @@ export function read_server_config(): ServersConfig | false
 	}
 }
 
-export function update_hetzup_config(updates: Partial<HetznerConfig>)
+export function update_hetzup_config(updates: Partial<HetzupConfig>)
 {
 	const config = JSON.parse(fs.readFileSync('hetzup_config.json', 'utf-8'));
 	Object.assign(config, updates);
@@ -124,7 +125,7 @@ function repair_config(config: 'hetzup' | 'servers', errors?: ArkErrors)
 				break;
 			}
 
-			const hetzner_fixes: Partial<HetznerConfig> = {};
+			const hetzner_fixes: Partial<HetzupConfig> = {};
 
 			for (let index = 0; index < errors.length; index++)
 			{
@@ -586,5 +587,13 @@ export async function disable_server_config(server_name: string | number, backup
 		throw new Error('Failed to disable domain config for ' + server_name);
 	}
 
-	await reload_nginx_config();
+	try
+	{
+		await reload_nginx_config();
+	}
+	catch
+	{
+		throw new Error('Failed to reload Nginx config');
+	}
+
 }

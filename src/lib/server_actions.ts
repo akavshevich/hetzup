@@ -1,11 +1,11 @@
 import ora, { Ora } from 'ora';
+import chalk from 'chalk';
 
-import { disable_server_config, enable_nginx_config, read_hetzner_config, read_server_config, ServerConfig, update_server_config } from './configs';
-import { log_error, error_to_string, sleep, format_date } from "./utils";
+import { enable_nginx_config, read_hetzner_config, read_server_config, ServerConfig, update_server_config } from './configs';
+import { error_to_string, sleep, format_date } from "./utils";
 import { get_running_servers, get_snapshots, get_available_server_types, initialize_snapshot_save, get_snapshot, delete_server, spin_up_server, get_server, delete_snapshot, rebuild_server_from_image, get_primary_ips, delete_primary_ip, change_ip_auto_delete_status, get_os_images } from './api_calls';
 import { NewServerConfig, NewServerDetails, OSImage, PrimaryIP, Server, ServerList, ServerType } from './types';
 import { show_info } from './interaction';
-import chalk from 'chalk';
 
 export async function generate_server_list(): Promise< ServerList >
 {
