@@ -210,6 +210,12 @@ function repair_config(config: 'hetzup' | 'servers', errors?: ArkErrors)
 
 export async function enable_nginx_config(server: Server, ports_config?: PortsConfig)
 {
+	if(!fs.existsSync(`/etc/nginx/`))
+	{
+		await show_info(`Nginx not found. Please install to enable automatic SSH and/or HTTP forwarding`);
+		return;
+	}
+
 	if(server.status !== 'running')
 	{
 		throw new Error(`${server.name} is currently inactive.`);
@@ -556,6 +562,11 @@ export async function disable_server_config(server_name: string | number, backup
 {
 	try
 	{
+		if(!fs.existsSync(`/etc/nginx/`))
+		{
+			return;
+		}
+
 		if(fs.existsSync(`/etc/nginx/hetzup/${server_name}`))
 		{
 			fs.unlinkSync(`/etc/nginx/hetzup/${server_name}`);
@@ -584,7 +595,7 @@ export async function disable_server_config(server_name: string | number, backup
 	}
 	catch
 	{
-		throw new Error('Failed to disable domain config for ' + server_name);
+		throw new Error('Failed to disable Nginx config for ' + server_name);
 	}
 
 	try

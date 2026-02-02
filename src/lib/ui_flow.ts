@@ -82,7 +82,6 @@ export async function main(navigate_to?: string)
 				);
 
 				await configure_ports(new_server);
-				await enable_nginx_config(new_server);
 
 				main('servers');
 				break;

@@ -1,5 +1,6 @@
 Implement rename server (running server, images, server config, nginx config)
 Implement rename server UI
+Show percentage progress for long actions (spin up and save to snapshot)
 
 DONE:
 Rewrite get_running_servers, move general logic to generic call_hetzner_api function
@@ -83,3 +84,4 @@ Attempt to obtain certificate if certbot is installed
 Add spinner for certbot challenge
 Rename main config
 Clean up index and includes list
+Initial setup and UI optimizations

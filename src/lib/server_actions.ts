@@ -622,10 +622,16 @@ export async function determine_preselected_config(server?: Server, location?: s
 				{
 					ssh_keys = saved_server_config.ssh_keys;
 				}
+
 				if(saved_server_config.ipv4)
 				{
 					ipv4 = saved_server_config.ipv4;
 				}
+				else
+				{
+					ipv4 = 'none';
+				}
+
 				if(saved_server_config.ipv6)
 				{
 					ipv6 = saved_server_config.ipv6;
@@ -651,7 +657,7 @@ export async function determine_preselected_config(server?: Server, location?: s
 		}
 
 		const available_ips = await load_available_ips(location);
-		if(!ipv4 || !get_ip_id(ipv4, 'ipv4', available_ips))
+		if(ipv4 !== 'none' && (!ipv4 || !get_ip_id(ipv4, 'ipv4', available_ips)))
 		{
 			ipv4 = undefined;
 		}

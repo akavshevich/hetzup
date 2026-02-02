@@ -1,3 +1,4 @@
+import fs from 'fs';
 import select from '@inquirer/select';
 import input from '@inquirer/input';
 import { checkbox, Separator } from '@inquirer/prompts';
@@ -216,15 +217,15 @@ export async function show_main_menu(): Promise< string | number >
 	{
 		if(reverse_last.reverse_action === 'save_stop')
 		{
-			main_menu.unshift({name: `Pause ${reverse_last.server.name}`, value: 'reverse_action'});
+			main_menu.unshift({name: `Pause ${chalk.green(reverse_last.server.name)}`, value: 'reverse_action'});
 		}
 		else
 		{
-			main_menu.unshift({name: `Resume ${reverse_last.server.name}`, value: 'reverse_action'});
+			main_menu.unshift({name: `Resume ${chalk.yellow(reverse_last.server.name)}`, value: 'reverse_action'});
 		}
 	}
 
-	const selected_menu_option = await get_select_response('Welcome to Hetzup!', main_menu);
+	const selected_menu_option = await get_select_response(`Welcome to ${chalk.red('Hetzup')}!`, main_menu);
 
 	if(reverse_last && selected_menu_option === 'reverse_action')
 	{
@@ -286,7 +287,7 @@ export async function show_info(message: string)
 
 export async function configure_api_key()
 {
-	let api_key = await get_text_response('Enter your Hetzner Cloud API key: ');
+	let api_key = await get_text_response(`Welcome to ${chalk.red('Hetzup')}! Enter your Hetzner Cloud API key: `);
 	api_key = api_key.trim();
 
 	if(api_key.length === 0)
@@ -975,6 +976,11 @@ export async function configure_ports(
 						server: Server, 
 						selected_config?: Required<PortsConfig>)
 {
+	if(!fs.existsSync(`/etc/nginx/`))
+	{
+		return;
+	}
+
 	if(!server.ipv4 && !server.ipv6)
 	{
 		return;
