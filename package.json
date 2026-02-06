@@ -1,4 +1,12 @@
 {
+  "name": "hetzup",
+  "version": "1.0.0",
+  "bin": {
+    "hetzup": "dist/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "devDependencies": {
     "@types/node": "^24.10.11",
     "@types/tcp-port-used": "^1.0.4",

@@ -1,5 +1,6 @@
 *.js
 *.js.map
+!dist/index.js
 package-lock.json
 node_modules
 .vscode

@@ -101,7 +101,7 @@ export function read_hetzner_config(): HetzupConfig | false
 
 	try
 	{
-		const config_raw = JSON.parse(fs.readFileSync('hetzup_config.json', 'utf-8'));
+		const config_raw = JSON.parse(fs.readFileSync(config_folder + 'hetzup_config.json', 'utf-8'));
 		const config = HetzupConfig(config_raw);
 
 		if(config instanceof type.errors)
