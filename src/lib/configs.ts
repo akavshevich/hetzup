@@ -1,4 +1,5 @@
 import fs from 'fs';
+import os from 'os';
 import { promisify } from 'node:util';
 import child_process from 'node:child_process';
 
@@ -51,9 +52,53 @@ const ServersConfig = type(
 );
 type ServersConfig = typeof ServersConfig.infer;
 
+function hetzup_config_folder(): string
+{
+	const user_home = os.homedir() + '/';
+
+	const config_folder = user_home + '.config/';
+	try
+	{
+		if(!fs.existsSync(config_folder))
+		{
+			fs.mkdirSync(config_folder);
+
+			if(!fs.existsSync(config_folder))
+			{
+				throw new Error('Failed to create .config/ folder');
+			}
+		}
+	}
+	catch(error)
+	{
+		throw new Error('Failed to create .config/ folder');
+	}
+
+	const hetzup_config_folder = config_folder + '/hetzup/';
+	try
+	{
+		if(!fs.existsSync(hetzup_config_folder))
+		{
+			fs.mkdirSync(hetzup_config_folder);
+
+			if(!fs.existsSync(hetzup_config_folder))
+			{
+				throw new Error('Failed to create .config/hetzup/ folder');
+			}
+		}
+	}
+	catch(error)
+	{
+		throw new Error('Failed to create .config/hetzup/ folder');
+	}
+
+	return hetzup_config_folder;
+}
 
 export function read_hetzner_config(): HetzupConfig | false
 {
+	const config_folder = hetzup_config_folder();
+
 	try
 	{
 		const config_raw = JSON.parse(fs.readFileSync('hetzup_config.json', 'utf-8'));
@@ -76,9 +121,11 @@ export function read_hetzner_config(): HetzupConfig | false
 
 export function read_server_config(): ServersConfig | false
 {
+	const config_folder = hetzup_config_folder();
+
 	try
 	{
-		const server_config_raw = JSON.parse(fs.readFileSync('servers.json', 'utf-8'));
+		const server_config_raw = JSON.parse(fs.readFileSync(config_folder + 'servers.json', 'utf-8'));
 		const server_config = ServersConfig(server_config_raw);
 
 		if(server_config instanceof type.errors)
@@ -98,22 +145,28 @@ export function read_server_config(): ServersConfig | false
 
 export function update_hetzup_config(updates: Partial<HetzupConfig>)
 {
-	const config = JSON.parse(fs.readFileSync('hetzup_config.json', 'utf-8'));
+	const config_folder = hetzup_config_folder();
+
+	const config = JSON.parse(fs.readFileSync(config_folder + 'hetzup_config.json', 'utf-8'));
 	Object.assign(config, updates);
 
-	fs.writeFileSync('hetzup_config.json', JSON.stringify(config, null, 2), 'utf-8');
+	fs.writeFileSync(config_folder + 'hetzup_config.json', JSON.stringify(config, null, 2), 'utf-8');
 }
 
 export function update_server_config(updates: Partial<ServersConfig>)
 {
-	const config = JSON.parse(fs.readFileSync('servers.json', 'utf-8'));
+	const config_folder = hetzup_config_folder();
+
+	const config = JSON.parse(fs.readFileSync(config_folder + 'servers.json', 'utf-8'));
 	Object.assign(config, updates);
 
-	fs.writeFileSync('servers.json', JSON.stringify(config, null, 2), 'utf-8');
+	fs.writeFileSync(config_folder + 'servers.json', JSON.stringify(config, null, 2), 'utf-8');
 }
 
 function repair_config(config: 'hetzup' | 'servers', errors?: ArkErrors)
 {
+	const config_folder = hetzup_config_folder();
+
 	switch (config)
 	{
 		case 'hetzup':
@@ -121,7 +174,7 @@ function repair_config(config: 'hetzup' | 'servers', errors?: ArkErrors)
 			if(!errors)
 			{
 				const blank_config = {api_token: ""};
-				fs.writeFileSync('hetzup_config.json', JSON.stringify(blank_config, null, 2), 'utf-8');
+				fs.writeFileSync(config_folder + 'hetzup_config.json', JSON.stringify(blank_config, null, 2), 'utf-8');
 				break;
 			}
 
@@ -173,7 +226,7 @@ function repair_config(config: 'hetzup' | 'servers', errors?: ArkErrors)
 			if(!errors)
 			{
 				const blank_config: ServersConfig = {servers: []};
-				fs.writeFileSync('servers.json', JSON.stringify(blank_config, null, 2), 'utf-8');
+				fs.writeFileSync(config_folder + 'servers.json', JSON.stringify(blank_config, null, 2), 'utf-8');
 				break;
 			}
 
@@ -467,7 +520,7 @@ export async function handle_ssl(domain: string)
 		return {ssl_certificate, ssl_certificate_key, genuine: true};
 	}
 
-	const spinner = ora({text: `Obtain SSL for ${domain}...`, spinner: 'point', color: 'cyan'}).start();
+	const spinner = ora({text: `Obtaining SSL for ${domain}...`, spinner: 'point', color: 'cyan'}).start();
 
 	try
 	{

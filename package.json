@@ -1,6 +1,6 @@
 {
   "devDependencies": {
-    "@types/node": "^24.3.1",
+    "@types/node": "^24.10.11",
     "@types/tcp-port-used": "^1.0.4",
     "typescript": "^5.9.2"
   },
