@@ -1,0 +1,1 @@
+**Hetzup** lets you spin up Hetzner Cloud servers on demand and automatically configures a reverse proxy for SSH and web. This means that you only pay when you’re actually using a server while keeping stable SSH & web access.

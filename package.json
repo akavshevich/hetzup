@@ -7,6 +7,15 @@
   "engines": {
     "node": ">=18"
   },
+  "files": [
+    "dist",
+    "templates",
+    "README.md"
+  ],
+    "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
   "devDependencies": {
     "@types/node": "^24.10.11",
     "@types/tcp-port-used": "^1.0.4",

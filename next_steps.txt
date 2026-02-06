@@ -86,3 +86,4 @@ Rename main config
 Clean up index and includes list
 Initial setup and UI optimizations
 Move configs from package directory
+Added execution rights to entry script
