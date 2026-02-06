@@ -1,3 +1,4 @@
+Fixed template relative path
 Implement rename server (running server, images, server config, nginx config)
 Implement rename server UI
 Show percentage progress for long actions (spin up and save to snapshot)
@@ -87,3 +88,4 @@ Clean up index and includes list
 Initial setup and UI optimizations
 Move configs from package directory
 Added execution rights to entry script
+Fixed template relative path

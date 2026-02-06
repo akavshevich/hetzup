@@ -10,6 +10,7 @@ import { error_to_string } from './utils';
 import { Server } from './types';
 import { show_info } from './interaction';
 import { read_config_for_server } from './server_actions';
+import path from 'node:path';
 
 const HetzupConfig = type(
 	{
@@ -411,7 +412,7 @@ export async function enable_nginx_config(server: Server, ports_config?: PortsCo
 	{
 		if(ports_config.ssh)
 		{
-			let ssh_config = fs.readFileSync('../templates/ssh', 'utf8');
+			let ssh_config = fs.readFileSync(path.join(__dirname, '../../templates/ssh'), 'utf8');
 
 			ssh_config = ssh_config.replaceAll('{{server_name}}', server.name.toString());
 			ssh_config = ssh_config.replaceAll('{{remote_ip}}', remote_ip);
@@ -438,7 +439,7 @@ export async function enable_nginx_config(server: Server, ports_config?: PortsCo
 
 		if(ports_config.domains)
 		{
-			const domain_forwarding_template = fs.readFileSync('../templates/http', 'utf8');
+			const domain_forwarding_template = fs.readFileSync(path.join(__dirname, '../../templates/http'), 'utf8');
 
 			for (const domain of ports_config.domains)
 			{
@@ -529,7 +530,8 @@ export async function handle_ssl(domain: string)
 			fs.unlinkSync(`/etc/nginx/sites-available/hetzup_temp_ssl_${domain}`);
 		}
 
-		let temp_ssl_config = fs.readFileSync('../templates/obtain_ssl', 'utf8');
+		let temp_ssl_config = fs.readFileSync(path.join(__dirname, '../../templates/obtain_ssl'), 'utf8');
+
 		temp_ssl_config = temp_ssl_config.replace('{{domain_name}}', domain);
 		fs.writeFileSync(`/etc/nginx/sites-enabled/hetzup_temp_ssl_${domain}`, temp_ssl_config, 'utf-8');
 		await reload_nginx_config();

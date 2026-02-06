@@ -1,6 +1,6 @@
 {
   "name": "hetzup",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "bin": {
     "hetzup": "dist/index.js"
   },
