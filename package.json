@@ -12,6 +12,11 @@
     "templates",
     "README.md"
   ],
+  "homepage": "https://hetzup.com/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/akavshevich/hetzup.git"
+  },
     "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build"

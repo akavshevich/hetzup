@@ -1,4 +1,5 @@
-Fixed template relative path
+Return to main screen after starting/pausing a server
+Better response when snapshot limit hit
 Implement rename server (running server, images, server config, nginx config)
 Implement rename server UI
 Show percentage progress for long actions (spin up and save to snapshot)

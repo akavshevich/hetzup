@@ -149,7 +149,7 @@ export async function server_actions(server: Server, action: string | number | f
 				await stop_server(server, action);
 				await disable_server_config(server.name, critical);
 
-				main('servers');
+				main();
 				return;
 
 			case 'save':
@@ -182,7 +182,7 @@ export async function server_actions(server: Server, action: string | number | f
 					preselected_config.available_ips
 				);
 					
-				main('servers');
+				main();
 				return;
 
 			case 'spin_up_select':
